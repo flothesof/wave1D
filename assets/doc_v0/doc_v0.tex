@@ -1,0 +1,223 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{fullpage}
+\usepackage{authblk}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bbm}
+\usepackage{euscript}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{amsfonts}
+\usepackage{bm}
+\usepackage{stmaryrd}
+
+% red
+% R: 202 G: 53 B: 66 
+% \definecolor{myred}{rgb}{0.789,0.207,0.2578}
+
+% blue
+% R: 39 G: 100 B: 123
+% \definecolor{myhyperblue}{rgb}{0.152,0.39,0.48}
+
+% green
+% R: 132 G: 159 B: 173
+% \definecolor{mygreen}{rgb}{0.5156,0.62,0.6757}
+
+\usepackage{color}
+\definecolor{myorange}{rgb}{0.9568,0.4941,0.1961}
+\definecolor{myred}{rgb}{0.9098,0.1294,0.2078}
+\definecolor{myblue}{rgb}{0.0352,0.4981,0.6509}
+\definecolor{mygreen}{rgb}{0.2235,0.6353,0.2588}
+\definecolor{lightgray}{rgb}{0.8,0.8,0.8}
+\definecolor{myhyperblue}{rgb}{0.1607,0.3922,0.9}
+\definecolor{mygrey}{rgb}{0.3,0.3,0.3}
+
+\newcommand{\unknown}[1]{\bm{{\color{myred}{#1}}}}
+\newcommand{\param}[1]{\bm{{\color{myhyperblue}{#1}}}}
+\newcommand{\data}[1]{\bm{{\color{mygreen}{#1}}}}
+\newcommand{\keyword}[1]{[\texttt{\textbf{#1}}]\!\,}
+
+\title{Functional scope \texttt{wave1D v0}}
+
+\author[1]{Florian Le Boudrais, Alexandre Imperiale}
+
+\begin{document}
+
+% \bibliographystyle{apalike}
+
+\maketitle
+
+\section{Continuous models}
+\subsection{Strong formulations}
+Let $\Omega = ]0; L[$ be the one-dimensional domain of interest and $\partial\Omega = \{0, L\}$ its boundary, we consider the one-dimensional model
+\begin{equation*}
+\quad \quad
+\keyword{Elastic}~
+\left\lbrace
+\begin{aligned}
+& \param{\alpha}\partial^2_{tt} \unknown{u} - \partial_x\big( \param{\beta} \partial_x \unknown{u} \big) = \data{f},\quad \text{in }\Omega,\\
+& \mathcal{B}_0(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \data{g_0},\quad \text{at } x = 0,\\
+&\mathcal{B}_L(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \data{g_L},\quad \text{at } x = L,\\
+& \unknown{u}(\cdot, 0) = \data{u_0},\quad \partial_t\unknown{u}(\cdot, 0) = \data{u_1},
+\end{aligned}
+\right.
+\end{equation*}
+where $\data{u_0}(x)$ and $\data{u_1}(x)$ are input initial conditions, $\data{f}(x, t)$ and $\data{g_{0,L}}(t)$ are three input source terms, $\param{\alpha}(x) > 0$ and $\param{\beta}(x) > 0$ are two input model parameters and $\mathcal{B}_{0, L}(\cdot, \cdot, \cdot)$ are two ``boundary condition'' operators taking the following forms
+\begin{itemize}
+\item[] \keyword{Dirichlet} boundary condition: 
+\begin{equation*}
+\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \unknown{u}(s, t),
+\end{equation*}
+\item[] \keyword{Robin} boundary condition: 
+\begin{equation*}
+\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma}\unknown{u}(s, t) + \partial_x \unknown{u}(s, t) n(s),
+\end{equation*}
+\item[] \keyword{Absorbing} boundary condition:
+\begin{equation*}
+\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma} \partial_t \unknown{u}(s, t) + \partial_x \unknown{u}(s, t) n(s),
+\end{equation*}
+\end{itemize}
+with $\param{\gamma}(x) \geq 0$ an input model parameter, and $n(0) = -1$ and $n(L) = 1$.
+\subsection{Weak formulations}
+We denote by $V = H^1(\Omega)$ and $V_0 = H^1_0(\Omega)$ the standard Sobolev spaces, and the spaces associated to potential non-homogeneous Dirichlet boundary conditions
+\begin{equation*}
+V_{\data{g_0}} = \big\{v \in V,~v(0) = \data{g_0}\big\},\quad V_{\data{g_L}} = \big\{v \in V,~v(L) = \data{g_L}\big\}
+\end{equation*}
+Denoting by
+\begin{equation*}
+m_{\param{\alpha}}(u, v) = \int_\Omega \param{\alpha} u v~\mathrm{d}\Omega, \quad k_{\param{\beta}}(u, v) = \int_\Omega \param{\beta} \partial_xu \,\partial_x v~\mathrm{d}\Omega,
+\end{equation*}
+we consider the following weak formulations
+\begin{itemize}
+\item[] \keyword{Elastic - Dirichlet} For any $t > 0$, find $\unknown{u}\in V_{\data{g_0}} \cap V_{\data{g_L}}$ such that for any $u^* \in V_{\data{g_0}} \cap V_{\data{g_L}}$
+\begin{equation*}
+\dfrac{\mathrm{d}^2}{\mathrm{d}t^2} m_{\param{\alpha}}(\unknown{u}, u^*) +
+k_{\param{\beta}} (\unknown{u}, u^*) = \int_\Omega \data{f}u^*~\mathrm{d}\Omega, 
+\end{equation*}
+\item[] \keyword{Elastic - Robin} For any $t > 0$, find $\unknown{u}\in V$ such that for any $u^* \in V$
+\begin{equation*}
+\dfrac{\mathrm{d}^2}{\mathrm{d}t^2} m_{\param{\alpha}}(\unknown{u}, u^*) +
+k_{\param{\beta}} (\unknown{u}, u^*)  + \sum_{s\in\{0, L\}}\param{\gamma}(s)\unknown{u}(s, t)u^*(s) = \int_\Omega \data{f}u^*~\mathrm{d}\Omega + \sum_{s\in\{0, L\}}\data{g_s}(t)u^*(s), 
+\end{equation*}
+\item[] \keyword{Elastic - Absorbing} For any $t > 0$, find $\unknown{u}\in V$ such that for any $u^* \in V$
+\begin{equation*}
+\dfrac{\mathrm{d}^2}{\mathrm{d}t^2} m_{\param{\alpha}}(\unknown{u}, u^*) +
+k_{\param{\beta}} (\unknown{u}, u^*)  + \sum_{s\in\{0, L\}}\param{\gamma}(s)\partial_t\unknown{u}(s, t)u^*(s) = \int_\Omega \data{f}u^*~\mathrm{d}\Omega + \sum_{s\in\{0, L\}}\data{g_s}(t)u^*(s), 
+\end{equation*}
+\end{itemize}
+completed with the initial conditions $\unknown{u}(\cdot, 0) = \data{u_0}$ and $\partial_t\unknown{u}(\cdot, 0) = \data{u_1}$. 
+
+\subsection{Energy conservation}
+
+We denote, for any $\unknown{u}\in V$ and any time $t > 0$, the energy functional
+\begin{equation*}
+\mathcal{E}_{\param{\alpha},\param{\beta}}(\unknown{u}) = \dfrac{1}{2}\Big\{m_{\param{\alpha}}(\partial_t \unknown{u}, \partial_t \unknown{u}) +  k_{\param{\beta}}(\unknown{u}, \unknown{u})\Big\}.
+\end{equation*}
+One can verify the following conservation properties in the different weak problems stated previously
+\begin{itemize}
+\item[] \keyword{Elastic - Dirichlet} Denoting by $\mathcal{R}(\cdot)$ any given harmonic lifting operator such that $\mathcal{R}(\data{g_{0, L}}) \in V$ are the lifted Dirichlet data, and $\unknown{\widetilde{u}} = \unknown{u} - \sum_{s\in\{0, L\}}\mathcal{R}(\data{g_{s}}) \in V_0$ then we have
+\begin{equation*}
+\dfrac{\mathrm{d}}{\mathrm{d}t} \mathcal{E}_{\param{\alpha},\param{\beta}}(\unknown{\widetilde{u}}) = \int_\Omega \data{f}\partial_t \unknown{\widetilde{u}}~\mathrm{d}\Omega -\sum_{s\in\{0, L\}}  \Big\{m_{\param{\alpha}}(\partial^2_{tt} \mathcal{R}(\data{g_{s}}), \partial_t \unknown{\widetilde{u}}) + k_{\param{\beta}}(\mathcal{R}(\data{g_{s}}), \partial_t \unknown{\widetilde{u}})\Big\},
+\end{equation*}
+\item[] \keyword{Elastic - Robin}
+\begin{equation*}
+\dfrac{\mathrm{d}}{\mathrm{d}t}\Big\{\mathcal{E}_{\param{\alpha},\param{\beta}}(\unknown{u}) +  \dfrac{1}{2}\sum_{s\in\{0, L\}}\param{\gamma}(s)|\unknown{u}(s, t)|^2 \Big\} = \int_\Omega \data{f}\partial_t \unknown{u}~\mathrm{d}\Omega + \sum_{s\in\{0, L\}}\data{g_s}(t)\partial_t\unknown{u}(s, t),
+\end{equation*}
+\item[] \keyword{Elastic - Absorbing}
+\begin{equation*}
+\dfrac{\mathrm{d}}{\mathrm{d}t} \mathcal{E}_{\param{\alpha},\param{\beta}}(\unknown{u}) = \int_\Omega \data{f}\partial_t \unknown{u}~\mathrm{d}\Omega + \sum_{s\in\{0, L\}}\data{g_s}(t)\partial_t\unknown{u}(s, t) - \sum_{s\in\{0, L\}}\param{\gamma}(s)|\partial_t\unknown{u}(s, t)|^2.
+\end{equation*}
+\end{itemize}
+
+\section{Space discretization}
+\subsection{Construction of high-order finte element spaces}
+We decompose $\Omega$ in a set of $N_e$ edges denoted by $\mathcal{E}^\delta$ and such that
+\begin{equation*}
+\mathcal{E} = \{e_l\}_{l=1}^{N^\delta_e}, \quad\quad \forall l\neq k\quad \overset{\circ}{e}_l \cap \overset{\circ}{e}_k = \varnothing, \quad\quad \Omega = \bigcup_{l=1}^{N^e}e_l.
+\end{equation*}
+We define $V_h$ the finite element space by
+\begin{equation*}
+V_h = \big\{ v_h \in \mathcal{C}^0(\overline{\Omega}), \quad\forall e \in \mathcal{E} \quad v_h|_{e} \in \mathcal{P}^k(e) \big\} \subset V,
+\end{equation*}
+where $k$ is the order of approximation, assumed to be identical for every edges in $\mathcal{E}$. Denoting by $\widehat{e} = [0; 1]$ the reference edge, and the affine transforms $F_l$ such that
+\begin{equation*}
+e_l = F_l(\widehat{e}), \quad \forall l=1,\cdots, N_e,
+\end{equation*}
+one have the equivalent definition of the approximation space
+\begin{equation*}
+V_h = \big\{ v_h \in \mathcal{C}^0(\overline{\Omega}), \quad\forall l=1,\cdots,N_e\quad  \exists! \widehat{v}_{h, l} \in \mathcal{P}^k(\widehat{e}), \quad v_h|_{e_l} = \widehat{v}_{h, l} \circ  F_l^{-1} \big\}.
+\end{equation*}
+On the reference edges, we set $\widehat{n}=k+1$ nodes denoted by
+\begin{equation*}
+\widehat{\Xi} = \{\widehat{\xi}_i\}_{i=1}^{\widehat{n}} \subset \widehat{e},
+\end{equation*}
+and satisfying the following extremity constraints
+\begin{equation*}
+\widehat{\xi}_1 = 0, \quad \widehat{\xi}_{\widehat{n}} = 1.
+\end{equation*}
+We associated to these nodes the Lagrange polynomials $\{\widehat{\varphi}_i\}_{i=1}^{\widehat{n}}$ forming a basis of  $\mathcal{P}^k(\widehat{e})$ and such that
+\begin{equation*}
+\widehat{\varphi}_i(\widehat{\xi}_j) = \delta_{ij}, \quad \forall i,j=1, \cdots, \widehat{n}.
+\end{equation*}
+The set of nods obtained from applying the transformations  $\{F_l\}_{l=1}^{N_e}$ to the nodes $\widehat{\Xi}$ is denoted by
+\begin{equation*}
+\Xi = \{\xi_I\}_{I=1}^{N}\subset\overline{\Omega},
+\end{equation*}
+from which we have discarded redundant nodes at the edges' extremities. The global number of nodes $N$ is given by
+\begin{equation*}
+N = \mathrm{card}(\Xi) = N_e \times k + 1.
+\end{equation*}
+To the set of nodes $\Xi$ we can associated the set of Lagrange basis functions $\{\varphi_I\}_{I=1}^{N}$ satisfying
+\begin{equation*}
+\varphi_I(\xi_J) = \delta_{IJ}, \quad \forall I,J=1,\cdots,N.
+\end{equation*}
+These Lagrange functions are locally represented by the local Lagrange polynomials i.e.
+\begin{equation*}
+\forall I = 1,\cdots, N, \quad \forall l \in \llbracket 1; N_e \rrbracket,\text{ s.t. } \xi_I \in e_l ,\quad \exists! i \in \llbracket 1; \widehat{n} \rrbracket,\quad \varphi_I|_{e_l} = \widehat{\varphi}_i \circ F_l^{-1},
+\end{equation*}
+where we have implicitly defined the ``local-to-global'' index transformation, denoted by $\ell_g(\cdot, \cdot)$ and defined as
+\begin{equation*}
+\ell_g(\cdot, \cdot)~:~\llbracket 1;\widehat{n} \rrbracket\times \llbracket 1;N_e \rrbracket \mapsto \llbracket 1;N \rrbracket, \quad I = \ell_g(i, l).
+\end{equation*}
+In the functional scope of \texttt{wave1D v0}, we consider two types of nodes on the reference edges \keyword{Equally Distributed} and  \keyword{Gauss-Lobatto}.
+
+\subsection{Finite element operators}
+\subsubsection{Mass operator}
+We define the discrete mass operator $\mathbb{M}_{\param{\alpha}} \in \mathcal{M}_{N\times N}(\mathbb{R})$ as
+\begin{equation*}
+\forall I,J = 1,\cdots, N,\quad \mathbb{M}_{\param{\alpha}, IJ} = m_{\param{\alpha}}(\varphi_I, \varphi_J) = \int_\Omega \param{\alpha} \varphi_I\varphi_J~\mathrm{d}\Omega,
+\end{equation*}
+and is available in two different forms
+\begin{itemize}
+\item[] \keyword{Assembled}: $\mathbb{M}_{\param{\alpha}}$ is stored into a \keyword{SparseMatrix} data structure, and computed using an assembling procedure with a sufficiently precise quadrature formula for the computation of the local mass matrices,
+\item[] \keyword{Lumped}:  $\mathbb{M}_{\param{\alpha}}$ is stored into a \keyword{Vector} data structure, and computed using an assembling procedure with an approximation of the local mass matrices referred to as the ``mass lumping'' technique.
+\end{itemize}
+We consider exclusively the \keyword{Gauss-Lobatto} quadrature formula for computing the integrals in the local mass matrices. For both modes, the available operations are \keyword{MltAdd} and \keyword{Inv}.
+
+\subsubsection{Stiffness operator}
+We define the discrete stiffness operator $\mathbb{K}_{\param{\beta}} \in \mathcal{M}_{N\times N}(\mathbb{R})$ as
+\begin{equation*}
+\forall I,J = 1,\cdots, N,\quad \mathbb{K}_{\param{\beta}, IJ} = k_{\param{\beta}}(\varphi_I, \varphi_J) = \int_\Omega \param{\beta}\varphi_I^\prime\,\varphi_J^\prime~\mathrm{d}\Omega,
+\end{equation*}
+and is available in three different forms
+\begin{itemize}
+\item[] \keyword{Assembled}: $\mathbb{K}_{\param{\alpha}}$ is stored into a \keyword{SparseMatrix} data structure, and computed using an assembling procedure with a sufficiently precise quadrature formula for the computation of the local stiffness matrices,
+\item[] \keyword{Locally Assembled}: Every local stiffness matrices are assembled and store into $N_e$ \keyword{FullMatrix} data structures. Compared to  the \keyword{Assembled} mode, this enable application of $\mathbb{K}_{\param{\alpha}}$ in parallel, but increases the memory footprint,
+\item[] \keyword{Unassembled}: $\mathbb{K}_{\param{\alpha}}$ is not stored and only the operation of multiplication with input finite element vectors is implemented and performed in parallel.
+\end{itemize}
+For both modes, the available operation is \keyword{MltAdd} exclusively since, by construction, the stiffness operator has a non-empty kernel, thus is not invertible.
+
+\section{Time discretization}
+
+
+
+\end{document}
