@@ -19,6 +19,7 @@
 \usepackage{amsfonts}
 \usepackage{bm}
 \usepackage{stmaryrd}
+\usepackage{bbm}
 
 % red
 % R: 202 G: 53 B: 66 
@@ -208,17 +209,67 @@ We define the discrete stiffness operator $\mathbb{K}_{\param{\beta}} \in \mathc
 \begin{equation*}
 \forall I,J = 1,\cdots, N,\quad \mathbb{K}_{\param{\beta}, IJ} = k_{\param{\beta}}(\varphi_I, \varphi_J) = \int_\Omega \param{\beta}\varphi_I^\prime\,\varphi_J^\prime~\mathrm{d}\Omega,
 \end{equation*}
-and is available in three different forms
+and is available in two different forms
 \begin{itemize}
 \item[] \keyword{Assembled}: $\mathbb{K}_{\param{\alpha}}$ is stored into a \keyword{SparseMatrix} data structure, and computed using an assembling procedure with a sufficiently precise quadrature formula for the computation of the local stiffness matrices,
-\item[] \keyword{Locally Assembled}: Every local stiffness matrices are assembled into $N_e$ \keyword{FullMatrix} data structures. Compared to  the \keyword{Assembled} mode, this enable application of $\mathbb{K}_{\param{\alpha}}$ in parallel, but increases the memory footprint,
-\item[] \keyword{Unassembled}: $\mathbb{K}_{\param{\alpha}}$ is not stored and only the operation of multiplication with input finite element vectors is implemented and performed in parallel.
+\item[] \keyword{Locally Assembled}: Every local stiffness matrices are assembled into $N_e$ \keyword{FullMatrix} data structures. Compared to  the \keyword{Assembled} mode, this enable application of $\mathbb{K}_{\param{\alpha}}$ in parallel, but increases the memory footprint.
 \end{itemize}
 The available operation for the stiffness operator is \keyword{MltAdd} exclusively since, by construction, the stiffness operator has a non-empty kernel thus is not invertible.
 
-\section{Time discretization}
-\subsection{\keyword{ExplicitOrderTwo} time scheme}
+\section{\keyword{ExplicitOrderTwo} time discretization}
+Depending on the boundary conditions we consider the following discrete schemes
+\subsection{The case of \keyword{Dirichlet} boundary conditions}
+We use a pseudo-elimination strategy to incorporate the boundary conditions in the standard leap-frog scheme. The scheme is decomposed into three steps
+\begin{itemize}
+\item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
+\item[] \keyword{Solve}: $ \overrightarrow{\unknown{U}}^* \longleftarrow \widetilde{\mathbb{M}}_{\param{\alpha}}^{-1} \widetilde{\overrightarrow{\unknown{U}}^*}$,
+\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n - 2 \overrightarrow{\unknown{U}}^{n-1}$,
+\end{itemize}
+where $\widetilde{\mathbb{M}}_{\param{\alpha}}$ and $\widetilde{\overrightarrow{\unknown{U}}}^*$ are resulting from a pseudo-elimination procedure.
 
-\subsection{\keyword{ImplicitOrderTwo} time scheme}
+\subsection{The case of \keyword{Robin} boundary conditions}
+The conservative time scheme used to incorporate the boundary conditions is the following
+\begin{equation*}
+\mathbb{M}_{\param{\alpha}}\dfrac{\overrightarrow{\unknown{U}}^{n+1} - 2\overrightarrow{\unknown{U}}^{n} + \overrightarrow{\unknown{U}}^{n-1}}{\Delta t^2} + \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \dfrac{\overrightarrow{\unknown{U}}^{n+1} + \overrightarrow{\unknown{U}}^{n-1}}{2} + \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n} = \mathbb{M} \overrightarrow{\data{F}}^n + \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n,
+\end{equation*}
+where $\mathbbm{1}_{0, L} \in \mathcal{M}_{N\times N}(\mathbb{R})$ are matrices defined as $(\mathbbm{1}_{0})_{ij} = \delta_{i=1, j=1}$ and $(\mathbbm{1}_{L})_{ij} = \delta_{i=N, j=N}$. This scheme is decomposed into three steps
+\begin{itemize}
+\item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
+\item[] \keyword{Solve}: $$\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \Big\{\overrightarrow{\unknown{U}}^*   - \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\overrightarrow{\unknown{U}}^{n-1} + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n \Big\}$$
+\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n - 2 \overrightarrow{\unknown{U}}^{n-1}$.
+\end{itemize}
+
+\subsection{The case of \keyword{Absorbing} boundary conditions}
+The dissipative time scheme used to incorporate the boundary conditions is the following
+\begin{equation*}
+\mathbb{M}_{\param{\alpha}}\dfrac{\overrightarrow{\unknown{U}}^{n+1} - 2\overrightarrow{\unknown{U}}^{n} + \overrightarrow{\unknown{U}}^{n-1}}{\Delta t^2} + \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \dfrac{\overrightarrow{\unknown{U}}^{n+1} - \overrightarrow{\unknown{U}}^{n-1}}{2\Delta t} + \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n} = \mathbb{M} \overrightarrow{\data{F}}^n + \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n,
+\end{equation*}
+This scheme is decomposed into three steps
+\begin{itemize}
+\item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
+\item[] \keyword{Solve}: $$\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \Big\{\overrightarrow{\unknown{U}}^*   + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\overrightarrow{\unknown{U}}^{n-1} + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n \Big\}$$
+\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n - 2 \overrightarrow{\unknown{U}}^{n-1}$.
+\end{itemize}
+
+\subsection{Order one initial conditions}
+In the case of \keyword{OrderOneIC}, the discrete propagators are simply initialized using
+\begin{equation*}
+\overrightarrow{\unknown{U}}^0 = \overrightarrow{\data{U}_0}, \quad \overrightarrow{\unknown{U}}^1 = \Delta t \overrightarrow{\data{U}_1}+ \overrightarrow{\data{U}_0}.
+\end{equation*}
+
+\subsection{Order two initial conditions}
+In the case of \keyword{OrderTwoIC}, we consider the following relations
+\begin{equation*}
+\overrightarrow{\unknown{U}}^0 = \overrightarrow{\data{U}_0}, \quad \dfrac{\overrightarrow{\unknown{U}}^1 - \overrightarrow{\unknown{U}}^{-1}}{2\Delta t} = \overrightarrow{\data{U}_1},
+\end{equation*}
+completed with the following discrete propagator
+\begin{equation*}
+\mathbb{M}_{\param{\alpha}}\dfrac{\overrightarrow{\unknown{U}}^{1} - 2\overrightarrow{\unknown{U}}^{0} + \overrightarrow{\unknown{U}}^{-1}}{\Delta t^2} + \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{0} = 0,
+\end{equation*}
+where we assume that the initial conditions have a compact support in the open domain $\Omega$, hence we discard the boundary conditions terms. Combining these relations we obtain
+\begin{equation*}
+\overrightarrow{\unknown{U}}^0 = \overrightarrow{\data{U}_0}, \quad \overrightarrow{\unknown{U}}^1 = \Delta t \overrightarrow{\data{U}_1} + \Big\{\mathbb{I} - \dfrac{\Delta t^2}{2} \mathbb{M}_{\param{\alpha}}^{-1}\mathbb{K}_{\param{\beta}}\Big\}\overrightarrow{\data{U}_0}.
+\end{equation*}
+
 
 \end{document}
