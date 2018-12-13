@@ -223,7 +223,7 @@ We use a pseudo-elimination strategy to incorporate the boundary conditions in t
 \begin{itemize}
 \item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
 \item[] \keyword{Solve}: $ \overrightarrow{\unknown{U}}^* \longleftarrow \widetilde{\mathbb{M}}_{\param{\alpha}}^{-1} \widetilde{\overrightarrow{\unknown{U}}^*}$,
-\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n - 2 \overrightarrow{\unknown{U}}^{n-1}$,
+\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n -  \overrightarrow{\unknown{U}}^{n-1}$,
 \end{itemize}
 where $\widetilde{\mathbb{M}}_{\param{\alpha}}$ and $\widetilde{\overrightarrow{\unknown{U}}}^*$ are resulting from a pseudo-elimination procedure.
 
@@ -236,7 +236,7 @@ where $\mathbbm{1}_{0, L} \in \mathcal{M}_{N\times N}(\mathbb{R})$ are matrices 
 \begin{itemize}
 \item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
 \item[] \keyword{Solve}: $$\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \Big\{\overrightarrow{\unknown{U}}^*   - \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\overrightarrow{\unknown{U}}^{n-1} + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n \Big\}$$
-\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n - 2 \overrightarrow{\unknown{U}}^{n-1}$.
+\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n -  \overrightarrow{\unknown{U}}^{n-1}$.
 \end{itemize}
 
 \subsection{The case of \keyword{Absorbing} boundary conditions}
@@ -248,7 +248,7 @@ This scheme is decomposed into three steps
 \begin{itemize}
 \item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
 \item[] \keyword{Solve}: $$\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \Big\{\overrightarrow{\unknown{U}}^*   + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\overrightarrow{\unknown{U}}^{n-1} + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n \Big\}$$
-\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n - 2 \overrightarrow{\unknown{U}}^{n-1}$.
+\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n -  \overrightarrow{\unknown{U}}^{n-1}$.
 \end{itemize}
 
 \subsection{Order one initial conditions}
