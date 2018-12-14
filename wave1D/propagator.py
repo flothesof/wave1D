@@ -1,107 +1,119 @@
 import numpy as np
-import scipy.sparse.linalg
+import configuration
+import finite_element_operator as fe_op
+import finite_element_space as fe_sp
 
 
-class Propagator:
+class ElasticExplicitOrderTwo:
     """
-    Base class for proagators.
+    Definition of leap-frog like discrete propagators for elastic models.
     """
-    def __init__(self, mass, mass_inv, stiffness):
+    def __init__(self, config=configuration.Elastic(), fe_space=fe_sp.FiniteElementSpace(),
+                 mass_assembly_type=fe_op.AssemblyType.LUMPED,
+                 stiffness_assembly_type=fe_op.AssemblyType.ASSEMBLED):
         """
-        Construction from mass, inverse of mass matrix, and stiffness matrix.
+        Constructor of discrete propagators.
+        :param config: Elastic model configuration.
+        :param fe_space: input finite element space.
         """
-        self.mass = mass
-        self.mass_inv = mass_inv
-        self.stiffness = stiffness
+        self.config = config
+        self.fe_space = fe_space
+        self.mass_assembly_type = mass_assembly_type
+        self.stiffness_assembly_type = stiffness_assembly_type
 
-        ndof = self.mass.shape[0]
+        self.u0 = None
+        self.u1 = None
+        self.u2 = None
+        self.ustar = None
+        self.operator1 = None
+        self.operator2 = None
+        self.rhs_operator = None
+        self.inv_operator = None
+        self.timestep = None
+
+    def initialize(self, timestep):
+        """
+        Initializing discrete propagator.
+        :param timestep: intput timestep.
+        """
+        self.timestep = timestep
+
+        # Extracting number of DoF and index of boundary DoF.
+        ndof = self.fe_space.get_ndof()
+        left_idx = 0
+        right_idx = ndof - 1
+
+        # Allocating and applying initial conditions.
         self.u0 = np.zeros(ndof)
         self.u1 = np.zeros(ndof)
         self.u2 = np.zeros(ndof)
+        self.ustar = np.zeros(ndof)
 
-        self.time = 0.
-        self.ts = 0.
+        # Assembling mass and stiffness operators.
+        mass = fe_op.assemble_mass(self.config.alpha, self.fe_space, self.mass_assembly_type)
+        stiffness = fe_op.assemble_stiffness(self.config.beta, self.fe_space, self.stiffness_assembly_type)
 
-    def set_init_cond(self, u1=None, u2=None):
-        """
-        Initilazing propagator.
-        :param u1: optional input initial conditions of setp n
-        :param u2: optional input initial conditions of setp n-1
-        """
-        if u1 is not None:
-            self.u1 = u1
-        if u2 is not None:
-            self.u2 = u2
+        # Computing operator to apply on u1.
+        self.operator1 = fe_op.linear_combination(2.0, mass, -timestep ** 2, stiffness)
 
-    def set_timestep(self, ts):
-        """
-        Setting propagator time step.
-        """
-        self.ts = ts
+        # Computing operator to apply on u2.
+        self.operator2 = fe_op.clone(-1.0, mass)
+        self.__append_boundary_contribution_operator2(self.config.left_boundary_condition, left_idx)
+        self.__append_boundary_contribution_operator2(self.config.right_boundary_condition, right_idx)
 
-    def swap(self):
-        """
-        Swapping DoF vectors.
-        """
-        u2_tmp = self.u2
-        self.u2 = self.u1
-        self.u1 = self.u0
-        self.u0 = u2_tmp
-        self.time += self.ts
+        # Computing rhs operator.
+        if self.config.rhs is not None:
+            self.rhs_operator = fe_op.assemble_mass(lambda x: 1.0, self.fe_space, self.mass_assembly_type)
 
-    def reset(self):
-        """
-        Reseting propagator by setting zeros to every solution vectors and time value to 0.
-        """
-        self.u0.fill(0.)
-        self.u1.fill(0.)
-        self.u2.fill(0.)
-        self.time = 0.
+        # Computing inv operator.
+        self.inv_operator = mass
+        self.__append_boundary_contribution_inv_operator(self.config.left_boundary_condition, left_idx)
+        self.__append_boundary_contribution_inv_operator(self.config.right_boundary_condition, right_idx)
+        fe_op.inv(self.inv_operator)
 
+    def __append_boundary_contribution_operator2(self, bc, b_idx):
+        """
+        Appending contribution of boundary condition into operator 2.
+        :param bc: boundary condition specifics.
+        :param b_idx: index of boundary DoF.
+        """
+        if bc is not None:
+            if bc.boundary_condition_type is configuration.BoundaryConditionType.ROBIN:
+                fe_op.add_value(self.operator2, -0.5 * (self.timestep ** 2) * bc.param, b_idx, b_idx)
+            elif bc.boundary_condition_type is configuration.BoundaryConditionType.ABSORBING:
+                fe_op.add_value(self.operator2, 0.5 * self.timestep * bc.param, b_idx, b_idx)
 
-class LeapFrog(Propagator):
-    """
-    Implementation of a leap frog propagation model.
-    """
-    def get_cfl(self):
+    def __append_boundary_contribution_inv_operator(self, bc, b_idx):
         """
-        Computing CFL.
-        :return: value of stability time step.
+        Appending contribution of boundary condition into inv operator.
+        :param bc: boudnary condition specifics.
+        :param b_idx: index of boundary DoF.
         """
-        radius = scipy.sparse.linalg.eigs(self.mass_inv * self.stiffness, k=1, which='LM', return_eigenvectors=False)
-        return 2.0 / np.sqrt(np.real(radius))
+        if bc is not None:
+            if bc.boundary_condition_type is configuration.BoundaryConditionType.DIRICHLET:
+                fe_op.apply_pseudo_elimination(self.inv_operator, b_idx)
+            elif bc.boundary_condition_type is configuration.BoundaryConditionType.ROBIN:
+                fe_op.add_value(self.inv_operator, 0.5 * (self.timestep ** 2) * bc.param, b_idx, b_idx)
+            elif bc.boundary_condition_type is configuration.BoundaryConditionType.ABSORBING:
+                fe_op.add_value(self.inv_operator, 0.5 * self.timestep * bc.param, b_idx, b_idx)
 
     def forward(self):
         """
-        Moving model forward.
+        Forwarding discrete solver.
         """
-        self.u0 = self.stiffness * self.u1
-        self.u0 *= -self.ts * self.ts
-        self.u0 = self.mass_inv * self.u0
-        self.u0 += 2.0 * self.u1 - self.u2
+        # Setting potential rhs.
+        if self.config.rhs is None:
+            self.ustar.fill(0.)
+
+        # Appending previous steps contributions.
+        fe_op.mlt_add(self.operator2, self.u2, self.ustar)
+        fe_op.mlt_add(self.operator1, self.u1, self.ustar)
+
+        # Appending potential boundary condition contributions.
+        # TO DO !
+
+        # Applying invert operator.
+        fe_op.mlt(self.inv_operator, self.ustar, self.u0)
 
 
-class ModifiedEquation(Propagator):
-    """
-    Implementation of a modified equation propagation model.
-    """
-    def get_cfl(self):
-        """
-        Computing CFL.
-        :return: value of stability time step.
-        """
-        radius = scipy.sparse.linalg.eigs(self.mass_inv * self.stiffness, k=1, which='LM', return_eigenvectors=False)
-        return np.sqrt(12.0 / np.real(radius))
 
-    def forward(self):
-        """
-        Moving model forward.
-        """
-        self.u0 = self.stiffness * self.u1
-        self.u0 = self.mass_inv * self.u0
-        self.u0 *= - self.ts * self.ts / 12.0
-        self.u0 += self.u1
-        self.u0 = self.stiffness * self.u0
-        self.u0 = self.mass_inv * self.u0
-        self.u0 *= -self.ts * self.ts
-        self.u0 += 2.0 * self.u1 - self.u2
