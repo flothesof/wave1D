@@ -219,11 +219,16 @@ The available operation for the stiffness operator is \keyword{MltAdd} exclusive
 \section{\keyword{ExplicitOrderTwo} time discretization}
 Depending on the boundary conditions we consider the following discrete schemes
 \subsection{The case of \keyword{Dirichlet} boundary conditions}
-We use a pseudo-elimination strategy to incorporate the boundary conditions in the standard leap-frog scheme. The scheme is decomposed into three steps
+We use a pseudo-elimination strategy to incorporate the boundary conditions in the standard leap-frog scheme. The scheme is decomposed into two steps
 \begin{itemize}
-\item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
-\item[] \keyword{Solve}: $ \overrightarrow{\unknown{U}}^* \longleftarrow \widetilde{\mathbb{M}}_{\param{\alpha}}^{-1} \widetilde{\overrightarrow{\unknown{U}}^*}$,
-\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n -  \overrightarrow{\unknown{U}}^{n-1}$,
+\item[(i)] Computing right-hand side
+\begin{equation*}
+\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n + \Big\{ 2 \mathbb{M}_{\param{\alpha}} - \Delta t^2 \mathbb{K}_{\param{\beta}} \Big\} \overrightarrow{\unknown{U}}^{n} - \mathbb{M}_{\param{\alpha}} \overrightarrow{\unknown{U}}^{n-1},
+\end{equation*}
+\item[(ii)] Solving linear system
+\begin{equation*}
+\overrightarrow{\unknown{U}}^* \longleftarrow \widetilde{\mathbb{M}}_{\param{\alpha}}^{-1} \widetilde{\overrightarrow{\unknown{U}}^*},
+\end{equation*}
 \end{itemize}
 where $\widetilde{\mathbb{M}}_{\param{\alpha}}$ and $\widetilde{\overrightarrow{\unknown{U}}}^*$ are resulting from a pseudo-elimination procedure.
 
@@ -232,11 +237,16 @@ The conservative time scheme used to incorporate the boundary conditions is the 
 \begin{equation*}
 \mathbb{M}_{\param{\alpha}}\dfrac{\overrightarrow{\unknown{U}}^{n+1} - 2\overrightarrow{\unknown{U}}^{n} + \overrightarrow{\unknown{U}}^{n-1}}{\Delta t^2} + \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \dfrac{\overrightarrow{\unknown{U}}^{n+1} + \overrightarrow{\unknown{U}}^{n-1}}{2} + \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n} = \mathbb{M} \overrightarrow{\data{F}}^n + \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n,
 \end{equation*}
-where $\mathbbm{1}_{0, L} \in \mathcal{M}_{N\times N}(\mathbb{R})$ are matrices defined as $(\mathbbm{1}_{0})_{ij} = \delta_{i=1, j=1}$ and $(\mathbbm{1}_{L})_{ij} = \delta_{i=N, j=N}$. This scheme is decomposed into three steps
+where $\mathbbm{1}_{0, L} \in \mathcal{M}_{N\times N}(\mathbb{R})$ are matrices defined as $(\mathbbm{1}_{0})_{ij} = \delta_{i=1, j=1}$ and $(\mathbbm{1}_{L})_{ij} = \delta_{i=N, j=N}$. This scheme is decomposed into two steps
 \begin{itemize}
-\item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
-\item[] \keyword{Solve}: $$\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \Big\{\overrightarrow{\unknown{U}}^*   - \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\overrightarrow{\unknown{U}}^{n-1} + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n \Big\}$$
-\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n -  \overrightarrow{\unknown{U}}^{n-1}$.
+\item[(i)] Computing right-hand side
+\begin{equation*}
+\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n + \Big\{ 2 \mathbb{M}_{\param{\alpha}} - \Delta t^2 \mathbb{K}_{\param{\beta}} \Big\} \overrightarrow{\unknown{U}}^{n} - \Big\{ \mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\} \overrightarrow{\unknown{U}}^{n-1},
+\end{equation*}
+\item[(ii)] Solving linear system
+\begin{equation*}
+\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t^2}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \overrightarrow{\unknown{U}}^*,
+\end{equation*}
 \end{itemize}
 
 \subsection{The case of \keyword{Absorbing} boundary conditions}
@@ -244,11 +254,16 @@ The dissipative time scheme used to incorporate the boundary conditions is the f
 \begin{equation*}
 \mathbb{M}_{\param{\alpha}}\dfrac{\overrightarrow{\unknown{U}}^{n+1} - 2\overrightarrow{\unknown{U}}^{n} + \overrightarrow{\unknown{U}}^{n-1}}{\Delta t^2} + \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \dfrac{\overrightarrow{\unknown{U}}^{n+1} - \overrightarrow{\unknown{U}}^{n-1}}{2\Delta t} + \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n} = \mathbb{M} \overrightarrow{\data{F}}^n + \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n,
 \end{equation*}
-This scheme is decomposed into three steps
+This scheme is decomposed into two steps
 \begin{itemize}
-\item[] \keyword{Prediction}: $\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n - \Delta t^2 \mathbb{K}_{\param{\beta}} \overrightarrow{\unknown{U}}^{n}$,
-\item[] \keyword{Solve}: $$\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \Big\{\overrightarrow{\unknown{U}}^*   + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\overrightarrow{\unknown{U}}^{n-1} + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n \Big\}$$
-\item[] \keyword{Correction}: $\overrightarrow{\unknown{U}}^{n+1} \longleftarrow \overrightarrow{\unknown{U}}^* + 2 \overrightarrow{\unknown{U}}^n -  \overrightarrow{\unknown{U}}^{n-1}$.
+\item[(i)] Computing right-hand side
+\begin{equation*}
+\overrightarrow{\unknown{U}}^* \longleftarrow \Delta t^2 \mathbb{M} \overrightarrow{\data{F}}^n + \Delta t^2 \sum_{s\in\{0, L\}}  \overrightarrow{\data{G_s}}^n + \Big\{ 2 \mathbb{M}_{\param{\alpha}} - \Delta t^2 \mathbb{K}_{\param{\beta}} \Big\} \overrightarrow{\unknown{U}}^{n} - \Big\{ \mathbb{M}_{\param{\alpha}} - \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s\Big\} \overrightarrow{\unknown{U}}^{n-1},
+\end{equation*}
+\item[(ii)] Solving linear system
+\begin{equation*}
+\overrightarrow{\unknown{U}}^* \longleftarrow \Big\{\mathbb{M}_{\param{\alpha}} + \dfrac{\Delta t}{2} \sum_{s\in\{0, L\}} \param{\gamma}(s)\mathbbm{1}_s \Big\}^{-1} \overrightarrow{\unknown{U}}^*,
+\end{equation*}
 \end{itemize}
 
 \subsection{Order one initial conditions}
