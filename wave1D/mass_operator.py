@@ -44,4 +44,7 @@ def apply_mass_lumping(density, fe_space, mass):
     :param fe_space: finite element space.
     :param mass: finite element operator bearing the lumping procedure.
     """
-    raise NotImplementedError()
+    for ie in range(fe_space.get_nelem()):
+        mass.data[fe_space.locals_to_globals(ie)] += fe_space.eval_at_quadrature_pnts(
+            lambda k, s:
+            fe_space.get_quadrature_weight(k) * fe_space.get_elem_length(ie) * density(fe_space.get_coord(ie, s)))
