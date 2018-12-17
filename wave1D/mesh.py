@@ -1,21 +1,11 @@
 import numpy as np
 
 
-def make_mesh_from_npt(start, stop, n):
+def make_mesh_from_npt(start=0, stop=1, n=2):
     """
     Create a regular 1D mesh from start, ending coordinates and number of points in mesh.
     """
     return np.linspace(start, stop, n)
-
-
-def get_mesh_nelem(mesh):
-    """
-    Extracting number of element in a mesh.
-    """
-    if mesh.size <= 1:
-        return 0
-    else:
-        return mesh.size - 1
 
 
 def fuse_meshes(mesh0, mesh1):

@@ -1,7 +1,7 @@
 from enum import Enum
 import numpy as np
 import scipy.sparse
-import finite_element_space
+import finite_element_space as fe_sp
 
 
 class AssemblyType(Enum):
@@ -17,7 +17,7 @@ class FiniteElementOperator:
     """
     Definition of finite element operators.
     """
-    def __init__(self, fe_space=finite_element_space.FiniteElementSpace(), assembly_type=AssemblyType.ASSEMBLED):
+    def __init__(self, fe_space=fe_sp.FiniteElementSpace(), assembly_type=AssemblyType.ASSEMBLED):
         """
         Constructor of operator.
         :param fe_space: input finite element space.
@@ -32,68 +32,83 @@ class FiniteElementOperator:
             self.data = np.zeros(fe_space.get_ndof())
 
 
-def assemble_mass(density=lambda x: 1.0, fe_space=finite_element_space.FiniteElementSpace(),
-                  assembly_type=AssemblyType.ASSEMBLED):
+def mlt(A, u, v):
     """
-    Assembling mass matrix.
-    :param density: function of space variable.
-    :param fe_space: input finite element space.
-    :param assembly_type: type of assembling procedure.
-    :return: instance of FiniteElementOperator class representing the mass operator.
-    """
-    mass = FiniteElementOperator(fe_space, assembly_type)
-
-    if mass.assembly_type is AssemblyType.ASSEMBLED:
-        __apply_mass_assembling(density, fe_space, mass)
-    elif mass.assembly_type is AssemblyType.LOCALLY_ASSEMBLED:
-        __apply_mass_local_assembling(density, fe_space, mass)
-    elif mass.assembly_type is AssemblyType.LUMPED:
-        __apply_mass_lumping(density, fe_space, mass)
-
-    return mass
-
-
-def __apply_mass_assembling(density, fe_space, mass):
-    """
-    Applying mass assembling procedure on a finite element operator.
-    :param density: mass density, function of space variable.
-    :param fe_space: finite element space.
-    :param mass: finite element operator bearing the assembling procedure.
+    Performing operation : v <- A * u
+    :param A: input finite element operator.
+    :param u: input vector.
+    :param v: output vector.
     """
     raise NotImplementedError()
 
 
-def __apply_mass_local_assembling(density, fe_space, mass):
+def mlt_add(A, u, v):
     """
-    Applying mass local assembling procedure on a finite element operator.
-    :param density: mass density, function of space variable.
-    :param fe_space: finite element space.
-    :param mass: finite element operator bearing the local assembling procedure.
-    """
-    raise NotImplementedError()
-
-
-def __apply_mass_lumping(density, fe_space, mass):
-    """
-    Applying mass lumping procedure on a finite element operator.
-    :param density: mass density, function of space variable.
-    :param fe_space: finite element space.
-    :param mass: finite element operator bearing the lumping procedure.
+    Performing operation v <- v + A * u
+    :param A: input finite element operator.
+    :param u: input vector.
+    :param v: output vector.
     """
     raise NotImplementedError()
 
 
-def assemble_stiffness(param=lambda x: 1.0, fe_space=finite_element_space.FiniteElementSpace(),
-                  assembly_type=AssemblyType.ASSEMBLED):
+def inv(A):
     """
-    Assembling stiffness matrix.
-    :param param: function of space variable.
-    :param fe_space: input finite element space.
-    :param assembly_type: type of assembling procedure.
-    :return: instance of FiniteElementOperator class representing the stiffness operator.
+    Inverting in-place an operator: A <- A^{-1}
+    :param A: input finite element operator.
     """
-    stiffness = FiniteElementOperator(fe_space, assembly_type)
-    return stiffness
+    raise NotImplementedError()
+
+
+def linear_combination(a, A, b, B):
+    """
+    Building an operator from combining two different operators, i.e. C <- a * A + b * B
+    :param a: input coefficient for A operator.
+    :param A: input finite element operator.
+    :param b: input coefficient for B operator.
+    :param B: input finite element operator.
+    :return: C s.t. C <- a * A + b * B
+    """
+    raise NotImplementedError()
+
+
+def clone(a, A):
+    """
+    Cloning input operator (deep copy).
+    :param a: input coefficient for A operator.
+    :param A: input operator to be cloned.
+    :return: Deep copy of a * A.
+    """
+    raise NotImplementedError()
+
+
+def spectral_radius(M, K):
+    """
+    Extract absolute value of largest eigen value of generalized eigen problem: K * u = l * M * u.
+    :param M: invertible finite element operator.
+    :param K: input finite element operator.
+    """
+    raise NotImplementedError()
+
+
+def add_value(A, a, i, j):
+    """
+    Adding value to an element of an operator A_ij <- A_ij + a
+    :param A: input finite element operator to be modified.
+    :param a: input value to add.
+    :param i: row index.
+    :param j: column index.
+    """
+    raise NotImplementedError()
+
+
+def apply_pseudo_elimination(A, i):
+    """
+    Applying pseudo elimination of an operator on a specific row.
+    :param A: input finite element operator to be modified.
+    :param i: row index.
+    """
+    raise NotImplementedError()
 
 
 
