@@ -10,7 +10,7 @@ def test_make_finite_element_space():
     """
     Simple construction of a finite element space.
     """
-    fe_space = fe_sp.FiniteElementSpace(mesh.Mesh([0.0, 1.0, 4.0]), fe_order=3)
+    fe_space = fe_sp.FiniteElementSpace(mesh.Mesh([0.0, 1.0, 4.0]), fe_order=3, quad_order=4)
     np_test.assert_equal(fe_space.get_ndof(), 7)
     np_test.assert_equal(fe_space.get_nelem(), 2)
     np_test.assert_almost_equal(fe_space.get_elem_length(0), 1.0)
@@ -47,6 +47,16 @@ def test_locals_to_globals():
     np_test.assert_array_equal(fe_space.locals_to_globals(1), [3, 4, 5, 6])
 
 
+def test_get_quadrature_weight():
+    """
+    Testing extractin of quadrature weights.
+    """
+    fe_space = fe_sp.FiniteElementSpace(mesh.Mesh([0.0, 1.0]), fe_order=3, quad_order=4)
+    _, w = lag_poly.make_quadrature_formula(4, lag_poly.PointDistributionType.GAUSS_LOBATTO)
+    for iq in range(len(w)):
+        np_test.assert_almost_equal(fe_space.get_quadrature_weight(iq), w[iq])
+
+
 def test_eval_at_quadrature_pnts():
     """
     Testing evaluation of callable at quadrature points.
@@ -64,7 +74,7 @@ def test_eval_at_quadrature_pnts():
 
 def test_apply_basis_diag_basis():
     """
-    Testing basis^T * diag * basis operation.
+    Testing basisx * diag * basis^T operation.
     """
     distrib_type = lag_poly.PointDistributionType.EQUALLY_DISTRIBUTED
     fe_space = fe_sp.FiniteElementSpace(mesh.Mesh([0.0, 1.0]), fe_order=2, basis_type=distrib_type,
@@ -72,9 +82,3 @@ def test_apply_basis_diag_basis():
 
     test_diag = [666.0, 666.0, 666.0]
     np_test.assert_array_almost_equal(fe_space.apply_basis_diag_basis(test_diag), np.diag(test_diag))
-
-
-
-
-
-

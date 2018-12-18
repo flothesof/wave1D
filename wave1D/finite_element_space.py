@@ -70,6 +70,14 @@ class FiniteElementSpace:
         offset = elem_idx * (self.get_nlocaldof() - 1)
         return np.linspace(0, self.get_nlocaldof() - 1, self.get_nlocaldof(), dtype=int) + offset
 
+    def get_quadrature_weight(self, quad_pnt_idx):
+        """
+        Extracting value of a quadrature weight.
+        :param quad_pnt_idx: index of a quadrature point.
+        :return: the weight associated to a quadrature point.
+        """
+        return self.quad_weights[quad_pnt_idx]
+
     def eval_at_quadrature_pnts(self, func=lambda k, s: 0.0):
         """
         Evaluating function defined on the reference element at the quadrature points.
@@ -84,10 +92,10 @@ class FiniteElementSpace:
 
     def apply_basis_diag_basis(self, diag):
         """
-        Computing the result of basis^T * D * basis, where basis are the Lagrange basis functions in the reference
+        Computing the result of basis * D * basis^T, where basis are the Lagrange basis functions in the reference
         element evaluated at the quadrature points.
         :param diag: the diagonal of a matrix of dimension equals to the number of quadrature points
         in the reference element.
         :return: a matrix resulting from basis^T * D * basis
         """
-        return np.dot(self.basis.transpose(), np.dot(np.diag(diag), self.basis))
+        return np.dot(self.basis, np.dot(np.diag(diag), self.basis.transpose()))

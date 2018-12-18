@@ -3,6 +3,7 @@ import numpy as np
 from numpy import testing as np_test
 import random
 
+
 def test_make_trapezoid_rule():
     """
     Testing creation of quadrature formula on equally distributed points of order 1.
