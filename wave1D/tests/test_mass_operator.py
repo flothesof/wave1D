@@ -23,13 +23,9 @@ def test_lumped_mass_p2():
     """
     def density(x):
         return 2.3 * x + 1.3
+
     fe_space = fe_sp.FiniteElementSpace(mesh.Mesh([0.0, 1.0, 4.0]), fe_order=2, quad_order=2)
     assemb_mass = mass_operator.assemble_mass(density, fe_space, fe_op.AssemblyType.ASSEMBLED).data.todense()
     lumped_mass = np.diag(mass_operator.assemble_mass(density, fe_space, fe_op.AssemblyType.LUMPED).data)
     np_test.assert_array_almost_equal(assemb_mass, lumped_mass)
-
-
-
-
-
 
