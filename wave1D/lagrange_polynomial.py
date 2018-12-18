@@ -20,9 +20,10 @@ def make_quadrature_formula(order=1, distribution_type=PointDistributionType.GAU
     :return: points and weights in an 1D array.
     """
     if distribution_type is PointDistributionType.EQUALLY_DISTRIBUTED:
-        return np.linspace(0, 1, order+1), sp_int.newton_cotes(order)
+        w, _ = sp_int.newton_cotes(order)
+        return np.linspace(0, 1, order+1), (1.0 / order) * np.ones_like(w) * w
     elif distribution_type is PointDistributionType.GAUSS_LOBATTO:
-        p, w = syp_int_quad.gauss_lobatto(order, 12)
+        p, w = syp_int_quad.gauss_lobatto(order+1, 9)
         return 0.5 * (p + np.ones_like(p)), 0.5 * np.ones_like(w) * w
 
 
@@ -34,7 +35,7 @@ def eval_lagrange_polynomial(pnts, idx, coord):
     :param coord: input coordinate.
     :return: the value of the Lagrange polynomial at input coordinate.
     """
-    return np.prod([(coord - pnts[m]) / (pnts[idx] - pnts[m]) for m in range(len(pnts) - 1) if m != idx])
+    return np.prod([(coord - pnts[m]) / (pnts[idx] - pnts[m]) for m in range(len(pnts)) if m != idx])
 
 
 def eval_lagrange_polynomials(pnts, coords):
@@ -48,3 +49,4 @@ def eval_lagrange_polynomials(pnts, coords):
     for il in range(len(pnts)):
         for ic in range(len(coords)):
             result[il, ic] = eval_lagrange_polynomial(pnts, il, coords[ic])
+    return result

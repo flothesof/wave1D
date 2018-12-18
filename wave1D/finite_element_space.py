@@ -26,14 +26,14 @@ class FiniteElementSpace:
         """
         :return: number of elements in a finite element space.
         """
-        return self.get_ndof() - 1
+        return len(self.mesh.pnts) - 1
 
     def get_elem_length(self, elem_idx):
         """
         :param: elem_idx: input element index.
         :return: return length of an element in the mesh.
         """
-        return abs(self.mesh[elem_idx + 1] - self.mesh[elem_idx])
+        return abs(self.mesh.pnts[elem_idx + 1] - self.mesh.pnts[elem_idx])
 
     def get_nlocaldof(self):
         """
@@ -59,7 +59,7 @@ class FiniteElementSpace:
         :param elem_idx: element index in the mesh
         :param s: parametrix coordinate in the reference element.
         """
-        return self.mesh[elem_idx] + s / self.get_elem_length(elem_idx)
+        return self.mesh.pnts[elem_idx] + s * self.get_elem_length(elem_idx)
 
     def locals_to_globals(self, elem_idx):
         """
@@ -67,7 +67,7 @@ class FiniteElementSpace:
         :param elem_idx: element index in the mesh.
         :return: a 1D array regrouping the global indexes.
         """
-        offset = elem_idx * (self.get_nlocaldof() - 1) + 1
+        offset = elem_idx * (self.get_nlocaldof() - 1)
         return np.linspace(0, self.get_nlocaldof() - 1, self.get_nlocaldof(), dtype=int) + offset
 
     def eval_at_quadrature_pnts(self, func=lambda k, s: 0.0):
