@@ -18,7 +18,7 @@ def assemble_stiffness(param=lambda x: 1.0, fe_space=fe_sp.FiniteElementSpace(),
     if stiffness.assembly_type is fe_op.AssemblyType.ASSEMBLED:
         lil_stiffness = scipy.sparse.lil_matrix((fe_space.get_ndof(), fe_space.get_ndof()))
         apply_stiffness_assembling(param, fe_space, lil_stiffness)
-        stiffness.data = lil_stiffness.tocsr()
+        stiffness.data = lil_stiffness.tocsc()
     else:
         raise NotImplementedError()
 

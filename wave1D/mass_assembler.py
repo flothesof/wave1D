@@ -18,7 +18,7 @@ def assemble_mass(density=lambda x: 1.0, fe_space=fe_sp.FiniteElementSpace(),
     if mass.assembly_type is fe_op.AssemblyType.ASSEMBLED:
         lil_mass = scipy.sparse.lil_matrix((fe_space.get_ndof(), fe_space.get_ndof()))
         apply_mass_assembling(density, fe_space, lil_mass)
-        mass.data = lil_mass.tocsr()
+        mass.data = lil_mass.tocsc()
     elif mass.assembly_type is fe_op.AssemblyType.LOCALLY_ASSEMBLED:
         raise NotImplementedError()
     elif mass.assembly_type is fe_op.AssemblyType.LUMPED:

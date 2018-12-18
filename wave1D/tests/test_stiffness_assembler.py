@@ -1,5 +1,4 @@
 from numpy import testing as np_test
-import numpy as np
 from wave1D import stiffness_assembler
 from wave1D import finite_element_space as fe_sp
 from wave1D import mesh
