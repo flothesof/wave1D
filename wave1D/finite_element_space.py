@@ -1,6 +1,6 @@
 import numpy as np
-import lagrange_polynomial as lag_poly
-import mesh as msh
+import wave1D.lagrange_polynomial as lag_poly
+import wave1D.mesh as msh
 
 
 class FiniteElementSpace:
