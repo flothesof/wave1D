@@ -125,6 +125,13 @@ def test_spectral_radius():
     radius = fe_op.spectral_radius(Mop, Kop)
     np_test.assert_almost_equal(radius, 2.0)
 
+    # testing with varying mass values
+    m = 2.0
+    k = 4.0
+    Mop = fe_op.make_from_data(np.diag(np.array([3*m, 2*m, m])), fe_op.AssemblyType.ASSEMBLED)
+    Kop = fe_op.make_from_data(np.diag(np.array([k, k, k])), fe_op.AssemblyType.ASSEMBLED)
+    radius = fe_op.spectral_radius(Mop, Kop)
+    np_test.assert_almost_equal(radius, 2.0)
 
 def test_apply_pseudo_elimination():
     """
