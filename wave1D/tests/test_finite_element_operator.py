@@ -1,9 +1,6 @@
 import numpy as np
 from numpy import testing as np_test
-import scipy.sparse
 from wave1D import finite_element_operator as fe_op
-from wave1D import finite_element_space as fe_sp
-from wave1D import mesh
 
 
 def test_mlt():
