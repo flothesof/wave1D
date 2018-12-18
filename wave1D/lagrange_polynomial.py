@@ -38,6 +38,22 @@ def eval_lagrange_polynomial(pnts, idx, coord):
     return np.prod([(coord - pnts[m]) / (pnts[idx] - pnts[m]) for m in range(len(pnts)) if m != idx])
 
 
+def eval_lagrange_polynomial_derivative(pnts, idx, coord):
+    """
+    Evaluating the first derivative of a specific Lagrange polynomial at input coordinate.
+    :param pnts: points defining the set of Lagrange polynomials.
+    :param idx: index of the Lagrange polynomial to evaluate.
+    :param coord: input coordinate.
+    :return: the value of the first derivative of a Lagrange polynomial at input coordinate.
+    """
+    v = 0.0
+    for i in range(len(pnts)):
+        if i != idx:
+            v += np.prod([(coord - pnts[m]) / (pnts[idx] - pnts[m]) for m in range(len(pnts)) if m != idx and m != i])\
+                 / (pnts[idx] - pnts[i])
+    return v
+
+
 def eval_lagrange_polynomials(pnts, coords):
     """
     Evaluating every Lagrange polynomials defined from their corresponding points at given coordinates
@@ -49,4 +65,20 @@ def eval_lagrange_polynomials(pnts, coords):
     for il in range(len(pnts)):
         for ic in range(len(coords)):
             result[il, ic] = eval_lagrange_polynomial(pnts, il, coords[ic])
+    return result
+
+
+def eval_lagrange_polynomials_derivatives(pnts, coords):
+    """
+    Evaluating the first derivative of every Lagrange polynomials defined from their corresponding points
+     at given coordinates
+    :param pnts: points defining the Lagrange polynomuals
+    :param coords: set of coordinates to evalute the Lagrange polynomials.
+    :return: a matrix such that M_ij is the evaluation if the first derivative of the i-th Lagrange polynomial
+        at the j-th input point.
+    """
+    result = np.zeros((len(pnts), len(coords)))
+    for il in range(len(pnts)):
+        for ic in range(len(coords)):
+            result[il, ic] = eval_lagrange_polynomial_derivative(pnts, il, coords[ic])
     return result

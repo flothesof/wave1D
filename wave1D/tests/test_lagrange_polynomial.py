@@ -69,7 +69,7 @@ def test_make_gauss_lobatto_order3():
 
 def test_eval_lagrange_polynomial():
     """
-    Testing evaluation of lagrange polynomials at a specific DoFs.
+    Testing evaluation of lagrange polynomials at specific DoFs.
     """
     pnts = [0.0, 0.5, 1.0]
 
@@ -88,6 +88,29 @@ def test_eval_lagrange_polynomial():
         np_test.assert_almost_equal(l0(v), lagrange_polynomial.eval_lagrange_polynomial(pnts, 0, v))
         np_test.assert_almost_equal(l1(v), lagrange_polynomial.eval_lagrange_polynomial(pnts, 1, v))
         np_test.assert_almost_equal(l2(v), lagrange_polynomial.eval_lagrange_polynomial(pnts, 2, v))
+
+
+def test_eval_lagrange_polynomial_derivative():
+    """
+    Testing evaluation of derivative of lagrange polynomials at specific DoFs.
+    """
+    pnts = [0.0, 0.5, 1.0]
+
+    def dl0(s):
+        return 4.0 * s - 3.0
+
+    def dl1(s):
+        return -8.0 * s + 4.0
+
+    def dl2(s):
+        return 4.0 * s - 1.0
+
+    random.seed()
+    for _ in range(50):
+        v = random.random()
+        np_test.assert_almost_equal(dl0(v), lagrange_polynomial.eval_lagrange_polynomial_derivative(pnts, 0, v))
+        np_test.assert_almost_equal(dl1(v), lagrange_polynomial.eval_lagrange_polynomial_derivative(pnts, 1, v))
+        np_test.assert_almost_equal(dl2(v), lagrange_polynomial.eval_lagrange_polynomial_derivative(pnts, 2, v))
 
 
 def test_eval_lagrange_polynomials():
@@ -114,6 +137,30 @@ def test_eval_lagrange_polynomials():
         np_test.assert_almost_equal(l1(test_coords[iv]), result[1, iv])
         np_test.assert_almost_equal(l2(test_coords[iv]), result[2, iv])
 
+
+def test_eval_lagrange_polynomials_derivatives():
+    """
+    Testing evaluation of the first derivative of every lagrange polynomials at every input DoFs.
+    """
+    pnts = [0.0, 0.5, 1.0]
+
+    def dl0(s):
+        return 4.0 * s - 3.0
+
+    def dl1(s):
+        return -8.0 * s + 4.0
+
+    def dl2(s):
+        return 4.0 * s - 1.0
+
+    test_coords = np.random.rand(5, 1)
+    result = lagrange_polynomial.eval_lagrange_polynomials_derivatives(pnts, test_coords)
+
+    np_test.assert_array_equal(result.shape, [len(pnts), len(test_coords)])
+    for iv in range(len(test_coords)):
+        np_test.assert_almost_equal(dl0(test_coords[iv]), result[0, iv])
+        np_test.assert_almost_equal(dl1(test_coords[iv]), result[1, iv])
+        np_test.assert_almost_equal(dl2(test_coords[iv]), result[2, iv])
 
 
 

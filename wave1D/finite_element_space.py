@@ -15,6 +15,7 @@ class FiniteElementSpace:
         self.local_dofs, _ = lag_poly.make_quadrature_formula(fe_order, basis_type)
         self.quad_pnts, self.quad_weights = lag_poly.make_quadrature_formula(quad_order, quad_type)
         self.basis = lag_poly.eval_lagrange_polynomials(self.local_dofs, self.quad_pnts)
+        self.dbasis = lag_poly.eval_lagrange_polynomials_derivatives(self.local_dofs, self.quad_pnts)
 
     def get_ndof(self):
         """
@@ -96,6 +97,16 @@ class FiniteElementSpace:
         element evaluated at the quadrature points.
         :param diag: the diagonal of a matrix of dimension equals to the number of quadrature points
         in the reference element.
-        :return: a matrix resulting from basis^T * D * basis
+        :return: a matrix resulting from basis * D * basis^T
         """
         return np.dot(self.basis, np.dot(np.diag(diag), self.basis.transpose()))
+
+    def apply_dbasis_diag_dbasis(self, diag):
+        """
+        Computing the result of dbasis * D * dbasis^T, where dbasis are the first derivative of the Lagrange basis
+        functions in the reference element evaluated at the quadrature points.
+        :param diag: the diagonal of a matrix of dimension equals to the number of quadrature points
+        in the reference element.
+        :return: a matrix resulting from dbasis * D * basis^T
+        """
+        return np.dot(self.dbasis, np.dot(np.diag(diag), self.dbasis.transpose()))
