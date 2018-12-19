@@ -24,6 +24,8 @@ def make_quadrature_formula(order=1, distribution_type=PointDistributionType.GAU
         return np.linspace(0, 1, order+1), (1.0 / order) * np.ones_like(w) * w
     elif distribution_type is PointDistributionType.GAUSS_LOBATTO:
         p, w = syp_int_quad.gauss_lobatto(order+1, 9)
+        w = [float(ww) for ww in w]
+        p = [float(pp) for pp in p]
         return 0.5 * (p + np.ones_like(p)), 0.5 * np.ones_like(w) * w
 
 
