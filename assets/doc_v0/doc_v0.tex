@@ -87,7 +87,11 @@ where $\data{u_0}(x)$ and $\data{u_1}(x)$ are input initial conditions, $\data{f
 \forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma} \partial_t \unknown{u}(s, t) + \param{\beta}(s)\partial_x \unknown{u}(s, t) n(s),
 \end{equation*}
 \end{itemize}
-with $\param{\gamma}(x) \geq 0$ an input model parameter, and $n(0) = -1$ and $n(L) = 1$.
+with $\param{\gamma}(x) \geq 0$ an input model parameter, and $n(0) = -1$ and $n(L) = 1$. Note that in the case of \keyword{Absorbing} boundary conditions, the optimal parameter is given by
+\begin{equation*}
+\forall s \in\{0, L\},\quad \param{\gamma} = \sqrt{\param{\alpha}(s)\param{\beta}(s)}.
+\end{equation*}
+
 \subsection{Weak formulations}
 We denote by $V = H^1(\Omega)$ and $V_0 = H^1_0(\Omega)$ the standard Sobolev spaces, and the spaces associated to potential non-homogeneous Dirichlet boundary conditions
 \begin{equation*}
