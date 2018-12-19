@@ -11,7 +11,7 @@ import wave1D.mass_assembler as mass_assembler
 
 # Material properties.
 def celerity(x):
-    return 2.0 # + 1.0 * np.exp(-1000 * (x - 0.3) ** 2)
+    return 2.0 + 1.0 * np.exp(-1000 * (x - 0.3) ** 2)
 
 
 def alpha(x):
@@ -26,7 +26,7 @@ def beta(x):
 
 # Creating left robin boundary condition.
 left_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.DIRICHLET,
-                                          value=lambda t: functional.ricker(t - 0.4, 10.0))
+                                          value=lambda t: functional.ricker(t - 0.4, 25.0))
 
 absorbing_param = np.sqrt(beta(1.5) * alpha(1.5))
 right_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.ABSORBING,
