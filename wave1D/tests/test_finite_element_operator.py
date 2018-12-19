@@ -1,5 +1,7 @@
 import numpy as np
 from numpy import testing as np_test
+from scipy.sparse import SparseEfficiencyWarning
+import warnings
 from wave1D import finite_element_operator as fe_op
 
 
@@ -82,6 +84,12 @@ def test_linear_combination():
     op2 = fe_op.linear_combination(2.0, op0, 0.5, op1)
     np_test.assert_array_almost_equal(op2.data, [3.0, 3.0, 3.0])
 
+    # Testing lumped and assembled case.
+    op0 = fe_op.make_from_data(np.array([1.0, 1.0, 1.0]), fe_op.AssemblyType.LUMPED)
+    op1 = fe_op.make_from_data(np.diag(np.array([2.0, 2.0, 2.0])), fe_op.AssemblyType.ASSEMBLED)
+    op2 = fe_op.linear_combination(2.0, op0, 0.5, op1)
+    np_test.assert_array_almost_equal(op2.data.todense(), np.diag(np.array([3.0, 3.0, 3.0])))
+
 
 def test_clone():
     """
@@ -103,9 +111,11 @@ def test_add_value():
     Testing adding value at specific DoF index in finite element operator.
     """
     # Testing assembled case.
+    warnings.simplefilter('ignore', SparseEfficiencyWarning)
     op0 = fe_op.make_from_data(np.diag(np.array([1.0, 1.0])), fe_op.AssemblyType.ASSEMBLED)
     fe_op.add_value(op0, 666.0, 0, 1)
     np_test.assert_array_almost_equal(op0.data.todense(), np.array([[1.0, 666.0], [0.0, 1.0]]))
+    warnings.resetwarnings()
 
     # Testing lumped case.
     op0 = fe_op.make_from_data(np.array([1.0, 1.0]), fe_op.AssemblyType.LUMPED)
@@ -132,6 +142,7 @@ def test_spectral_radius():
     Kop = fe_op.make_from_data(np.diag(np.array([k, k, k])), fe_op.AssemblyType.ASSEMBLED)
     radius = fe_op.spectral_radius(Mop, Kop)
     np_test.assert_almost_equal(radius, 2.0)
+
 
 def test_apply_pseudo_elimination():
     """
