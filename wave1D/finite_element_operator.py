@@ -2,7 +2,7 @@ from enum import Enum
 import numpy as np
 import scipy.sparse
 import scipy.sparse.linalg
-import finite_element_space as fe_sp
+import wave1D.finite_element_space as fe_sp
 
 
 class AssemblyType(Enum):

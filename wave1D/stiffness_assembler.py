@@ -1,5 +1,5 @@
-import finite_element_operator as fe_op
-import finite_element_space as fe_sp
+import wave1D.finite_element_operator as fe_op
+import wave1D.finite_element_space as fe_sp
 import numpy as np
 import scipy.sparse
 
