@@ -10,18 +10,25 @@ import wave1D.mass_assembler as mass_assembler
 
 
 # Material properties.
+def celerity(x):
+    return 2.0 # + 1.0 * np.exp(-1000 * (x - 0.3) ** 2)
+
+
 def alpha(x):
-    return 1.0
+    c = celerity(x)
+    c2 = c * c
+    return 1.0 / c2
+
 
 def beta(x):
-    return 1.0
+    return 2.0
 
 
 # Creating left robin boundary condition.
 left_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.DIRICHLET,
-                                          value=lambda t: functional.ricker(t - 10.0, 0.1))
+                                          value=lambda t: functional.ricker(t - 0.4, 10.0))
 
-absorbing_param = 5.0e-3
+absorbing_param = np.sqrt(beta(1.5) * alpha(1.5))
 right_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.ABSORBING,
                                            value=lambda t: 0, param=absorbing_param)
 
@@ -29,7 +36,7 @@ right_bc = configuration.BoundaryCondition(boundary_condition_type=configuration
 config = configuration.Elastic(alpha=alpha, beta=beta, left_bc=left_bc, right_bc=right_bc)
 
 # Creating finite element space.
-fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 1.0, 200), fe_order=5, quad_order=5)
+fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 1.5, 140), fe_order=5, quad_order=5)
 
 # Creating propagator.
 propag = elastic_propagator.ElasticExplicitOrderTwo(config=config, fe_space=fe_space,
@@ -46,7 +53,7 @@ propag.initialize()
 fig, ax = plt.subplots()
 lines = ax.plot(propag.u0)
 ax.set_ylim((-1, 1))
-for i in range(5000):
+for i in range(10000):
     propag.forward()
     if i % 15 == 0:
         lines[0].set_ydata(propag.u0)
