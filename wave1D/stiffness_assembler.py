@@ -35,7 +35,7 @@ def apply_stiffness_assembling(fe_space, param, stiffness):
         for ie in range(fe_space.get_nelem()):
             local_stiffness = fe_space.apply_dbasis_diag_dbasis(fe_space.eval_at_quadrature_pnts(
                 lambda k, s:
-                fe_space.get_quadrature_weight(k) * fe_space.get_elem_length(ie) * param(fe_space.get_coord(ie, s))))
+                fe_space.get_quadrature_weight(k) * param(fe_space.get_coord(ie, s)) / fe_space.get_elem_length(ie)))
             locals_to_globals = fe_space.locals_to_globals(ie)
             stiffness[np.array(locals_to_globals)[:, None], locals_to_globals] += local_stiffness
     else:
