@@ -186,5 +186,19 @@ def apply_pseudo_elimination(A, i):
         A.data[i] = 1.0
 
 
+def apply_as_linear_form(A, u, v):
+    """
+    Compute the scalar result u^T A v.
+    :param A: input finite element operator.
+    :param u: input vector.
+    :param v: input vector.
+    :return: scalar result.
+    """
+    if A.assembly_type is AssemblyType.LUMPED:
+        return np.sum(u * A.data * v)
+    else:
+        raise NotImplementedError()
+
+
 
 

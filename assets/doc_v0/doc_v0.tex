@@ -80,11 +80,11 @@ where $\data{u_0}(x)$ and $\data{u_1}(x)$ are input initial conditions, $\data{f
 \end{equation*}
 \item[] \keyword{Robin} boundary condition: 
 \begin{equation*}
-\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma}\unknown{u}(s, t) + \partial_x \unknown{u}(s, t) n(s),
+\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma}\unknown{u}(s, t) + \param{\beta}(s)\partial_x \unknown{u}(s, t) n(s),
 \end{equation*}
 \item[] \keyword{Absorbing} boundary condition:
 \begin{equation*}
-\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma} \partial_t \unknown{u}(s, t) + \partial_x \unknown{u}(s, t) n(s),
+\forall s \in\{0, L\},\quad \mathcal{B}_s(\unknown{u}, \partial_t \unknown{u}, \partial_x \unknown{u}) = \param{\gamma} \partial_t \unknown{u}(s, t) + \param{\beta}(s)\partial_x \unknown{u}(s, t) n(s),
 \end{equation*}
 \end{itemize}
 with $\param{\gamma}(x) \geq 0$ an input model parameter, and $n(0) = -1$ and $n(L) = 1$.
