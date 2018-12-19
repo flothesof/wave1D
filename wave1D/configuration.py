@@ -22,7 +22,7 @@ class BoundaryCondition:
         :param value: function of time.
         :param param: potential parameter  as positive constant value.
         """
-        self.boudnary_condition_type = boundary_condition_type
+        self.boundary_condition_type = boundary_condition_type
         self.value = value
         self.param = param
         if self.param < 0.0:

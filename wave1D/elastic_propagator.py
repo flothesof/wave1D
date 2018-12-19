@@ -1,8 +1,10 @@
 from enum import Enum
 import numpy as np
-import configuration
-import finite_element_operator as fe_op
-import finite_element_space as fe_sp
+import wave1D.configuration as configuration
+import wave1D.finite_element_operator as fe_op
+import wave1D.finite_element_space as fe_sp
+import wave1D.mass_assembler as mass_assembler
+import wave1D.stiffness_assembler as stiffness_assembler
 
 
 class InitialConditionType(Enum):
@@ -11,15 +13,16 @@ class InitialConditionType(Enum):
     """
     ORDERONE = 0
     ORDERTWO = 1
+    NONE = 2
 
 
 class ElasticExplicitOrderTwo:
     """
     Definition of leap-frog like discrete propagators for elastic models.
     """
-    def __init__(self, config=configuration.Elastic(), fe_space=fe_sp.FiniteElementSpace(),
+    def __init__(self, config, fe_space,
                  mass_assembly_type=fe_op.AssemblyType.LUMPED, stiffness_assembly_type=fe_op.AssemblyType.ASSEMBLED,
-                 init_cond_type=InitialConditionType.ORDERONE):
+                 init_cond_type=InitialConditionType.NONE):
         """
         Constructor of discrete propagators.
         :param config: Elastic model configuration.
@@ -56,8 +59,8 @@ class ElasticExplicitOrderTwo:
         self.ustar = np.zeros(ndof)
 
         # Assembling mass and stiffness operators.
-        mass = fe_op.assemble_mass(self.config.alpha, self.fe_space, self.mass_assembly_type)
-        stiffness = fe_op.assemble_stiffness(self.config.beta, self.fe_space, self.stiffness_assembly_type)
+        mass = mass_assembler.assemble_mass(self.fe_space, self.config.alpha, self.mass_assembly_type)
+        stiffness = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.beta, self.stiffness_assembly_type)
 
         # Computing CFL or setting timestep.
         if timestep is None:
@@ -67,7 +70,7 @@ class ElasticExplicitOrderTwo:
             self.timestep = timestep
 
         # Computing operator to apply on u1.
-        self.operator1 = fe_op.linear_combination(2.0, mass, -timestep ** 2, stiffness)
+        self.operator1 = fe_op.linear_combination(2.0, mass, -self.timestep ** 2, stiffness)
 
         # Computing operator to apply on u2.
         self.operator2 = fe_op.clone(-1.0, mass)
@@ -76,7 +79,7 @@ class ElasticExplicitOrderTwo:
 
         # Computing rhs operator.
         if self.config.rhs is not None:
-            self.rhs_operator = fe_op.assemble_mass(lambda x: 1.0, self.fe_space, self.mass_assembly_type)
+            self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, self.mass_assembly_type)
 
         # Computing inv operator.
         self.inv_operator = mass

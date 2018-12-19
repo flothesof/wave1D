@@ -18,7 +18,7 @@ class FiniteElementOperator:
     """
     Definition of finite element operators.
     """
-    def __init__(self, fe_space=fe_sp.FiniteElementSpace(), assembly_type=AssemblyType.ASSEMBLED):
+    def __init__(self, fe_space, assembly_type):
         """
         Constructor of operator.
         :param fe_space: input finite element space.
@@ -39,15 +39,24 @@ def make_from_data(data, assembly_type):
     :param: data: data defining the operator.
     :param: assembly_type: type of assembling procedure.
     """
-    operator = FiniteElementOperator()
+    operator = FiniteElementOperator(fe_space=fe_sp.FiniteElementSpace(), assembly_type=assembly_type)
     operator.assembly_type = assembly_type
 
     if assembly_type is AssemblyType.ASSEMBLED:
-        operator.data = scipy.sparse.csc_matrix(data)
+        if len(data.shape) is 2:
+            operator.data = scipy.sparse.csc_matrix(data)
+        else:
+            raise ValueError("Expecting two dimensional array when creating ASSEMBLED operator from data.")
     elif assembly_type is AssemblyType.LOCALLY_ASSEMBLED:
-        operator.data = data
+        if len(data.shape) is 1:
+            operator.data = data
+        else:
+            raise ValueError("Expecting one dimensional array when creating LOCALLY_ASSEMBLED operator from data.")
     elif assembly_type is AssemblyType.LUMPED:
-        operator.data = data
+        if len(data.shape) is 1:
+            operator.data = data
+        else:
+            raise ValueError("Expecting one dimensional array when creating LUMPED operator from data.")
 
     return operator
 
@@ -106,10 +115,11 @@ def linear_combination(a, A, b, B):
     """
     if A.assembly_type is AssemblyType.ASSEMBLED and B.assembly_type is AssemblyType.ASSEMBLED:
         return make_from_data(a * A.data + b * B.data, AssemblyType.ASSEMBLED)
-    elif A.assembly_type is AssemblyType.LOCALLY_ASSEMBLED and B.assembly_type is AssemblyType.LOCALLY_ASSEMBLED:
-        raise NotImplementedError()
     elif A.assembly_type is AssemblyType.LUMPED and B.assembly_type is AssemblyType.LUMPED:
         return make_from_data(a * A.data + b * B.data, AssemblyType.LUMPED)
+    elif A.assembly_type is AssemblyType.LUMPED and B.assembly_type is AssemblyType.ASSEMBLED:
+        A_data = scipy.sparse.dia_matrix((A.data, [0]), shape=B.data.shape)
+        return make_from_data(a * A_data + b * B.data, AssemblyType.ASSEMBLED)
     else:
         raise NotImplementedError()
 
@@ -134,8 +144,8 @@ def spectral_radius(M, K):
         Minv = clone(1.0, M)
         inv(Minv)
         if Minv.assembly_type is AssemblyType.LUMPED:
-            Minv = scipy.sparse.dia_matrix((Minv.data, [0]), shape=K.data.shape)
-        return scipy.sparse.linalg.eigs(Minv.data * K.data, k=1, which='LM', return_eigenvectors=False)
+            Minv.data = scipy.sparse.dia_matrix((Minv.data, [0]), shape=K.data.shape)
+        return np.real(scipy.sparse.linalg.eigs(Minv.data * K.data, k=1, which='LM', return_eigenvectors=False)[0])
     else:
         raise NotImplementedError()
 

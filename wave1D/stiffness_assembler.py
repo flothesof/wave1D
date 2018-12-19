@@ -4,12 +4,11 @@ import numpy as np
 import scipy.sparse
 
 
-def assemble_stiffness(param=lambda x: 1.0, fe_space=fe_sp.FiniteElementSpace(),
-                       assembly_type=fe_op.AssemblyType.ASSEMBLED):
+def assemble_stiffness(fe_space, param=lambda x: 1.0, assembly_type=fe_op.AssemblyType.ASSEMBLED):
     """
     Assembling stiffness matrix.
-    :param param: function of space variable.
     :param fe_space: input finite element space.
+    :param param: function of space variable.
     :param assembly_type: type of assembling procedure.
     :return: instance of FiniteElementOperator class representing the stiffness operator.
     """
@@ -17,7 +16,7 @@ def assemble_stiffness(param=lambda x: 1.0, fe_space=fe_sp.FiniteElementSpace(),
 
     if stiffness.assembly_type is fe_op.AssemblyType.ASSEMBLED:
         lil_stiffness = scipy.sparse.lil_matrix((fe_space.get_ndof(), fe_space.get_ndof()))
-        apply_stiffness_assembling(param, fe_space, lil_stiffness)
+        apply_stiffness_assembling(fe_space, param, lil_stiffness)
         stiffness.data = lil_stiffness.tocsc()
     else:
         raise NotImplementedError()
@@ -25,11 +24,11 @@ def assemble_stiffness(param=lambda x: 1.0, fe_space=fe_sp.FiniteElementSpace(),
     return stiffness
 
 
-def apply_stiffness_assembling(param, fe_space, stiffness):
+def apply_stiffness_assembling(fe_space, param, stiffness):
     """
     Applying assembling procedure on stiffness operator.
-    :param param: input parameter.
     :param fe_space: finite element space.
+    :param param: input parameter.
     :param stiffness: sparse matrix in lil formatbearing the assembling procedure.
     """
     if stiffness.format is 'lil':
