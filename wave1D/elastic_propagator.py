@@ -82,18 +82,30 @@ class ElasticExplicitOrderTwo:
             self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, self.mass_assembly_type)
 
         # Computing inv operator.
-        self.inv_operator = mass
+        self.inv_operator = fe_op.clone(1.0, mass)
         self.__add_boundary_contrib_inv_operator(self.config.left_boundary_condition, self.fe_space.get_left_idx())
         self.__add_boundary_contrib_inv_operator(self.config.right_boundary_condition, self.fe_space.get_right_idx())
         fe_op.inv(self.inv_operator)
 
         # Applying initial conditions.
         if self.init_cond_type is InitialConditionType.ORDERONE:
+
             for i, x in enumerate(self.fe_space.get_dof_coords()):
                 self.u2[i] = self.config.init_field(x)
                 self.u1[i] = self.timestep * self.config.init_velocity(x) + self.u2[i]
+
         elif self.init_cond_type is InitialConditionType.ORDERTWO:
-            raise NotImplementedError()
+
+            for i, x in enumerate(self.fe_space.get_dof_coords()):
+                self.u2[i] = self.config.init_field(x)
+
+            fe_op.mlt(stiffness, self.u2, self.ustar)
+            fe_op.inv(mass)
+            fe_op.mlt(mass, self.ustar, self.u1)
+
+            for i, x in enumerate(self.fe_space.get_dof_coords()):
+                self.u1[i] = self.timestep * self.config.init_velocity(x) + self.u2[i] \
+                             - 0.5 * (self.timestep ** 2) * self.u1[i]
 
     def forward(self):
         """
