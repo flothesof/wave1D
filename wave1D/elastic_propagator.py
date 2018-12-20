@@ -89,7 +89,9 @@ class ElasticExplicitOrderTwo:
 
         # Applying initial conditions.
         if self.init_cond_type is InitialConditionType.ORDERONE:
-            raise NotImplementedError()
+            for i, x in enumerate(self.fe_space.get_dof_coords()):
+                self.u2[i] = self.config.init_field(x)
+                self.u1[i] = self.timestep * self.config.init_velocity(x) + self.u2[i]
         elif self.init_cond_type is InitialConditionType.ORDERTWO:
             raise NotImplementedError()
 

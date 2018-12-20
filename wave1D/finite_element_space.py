@@ -62,6 +62,16 @@ class FiniteElementSpace:
         """
         return self.mesh.pnts[elem_idx] + s * self.get_elem_length(elem_idx)
 
+    def get_dof_coords(self):
+        """
+        Extracting every DoF coords in finite element space.
+        :return: a 1D array of size equals to the number of DoF in finite element space regrouping DoF coordinates.
+        """
+        coords = np.zeros(self.get_ndof())
+        for ie in range(self.get_nelem()):
+            coords[self.locals_to_globals(ie)] = [self.get_coord(ie, s) for s in self.local_dofs]
+        return coords
+
     def locals_to_globals(self, elem_idx):
         """
         Extracting index mappings from local numbering to global numbering
