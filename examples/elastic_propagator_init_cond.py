@@ -38,7 +38,7 @@ numerical_lines = ax.plot(x, numerical_propagator.u0)
 analytical_lines = ax.plot(x, analytical_sol)
 ax.plot(x, np.zeros_like(x), '*')
 ax.set_ylim((-2, 2))
-for i in range(20):
+for i in range(200):
     numerical_propagator.forward()
     analytical_sol = analytical_solution(k, x, (i + 1) * dt)
     numerical_lines[0].set_ydata(numerical_propagator.u1)
