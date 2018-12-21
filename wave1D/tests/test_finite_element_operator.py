@@ -159,4 +159,18 @@ def test_apply_pseudo_elimination():
     np_test.assert_array_almost_equal(op0.data, np.array([1.0, 1.0]))
 
 
+def test_apply_as_bilinear_form():
+    """
+    Testing u^T A v operation.
+    """
+    # Testing assembled case.
+    op = fe_op.make_from_data(np.array([[1.0, 5.0], [3.0, 3.0]]), fe_op.AssemblyType.ASSEMBLED)
+    v = np.array([1.0, 1.0])
+    u = np.array([2.0, 0.5])
+    np_test.assert_almost_equal(fe_op.apply_as_linear_form(op, u, v), 15.0)
+
+    # Testing lumped case.
+    op = fe_op.make_from_data(np.array([1.0, 5.0]), fe_op.AssemblyType.LUMPED)
+    np_test.assert_almost_equal(fe_op.apply_as_linear_form(op, u, v), 9.0 / 2.0)
+
 

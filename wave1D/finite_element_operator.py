@@ -197,7 +197,9 @@ def apply_as_linear_form(A, u, v):
     if A.assembly_type is AssemblyType.LUMPED:
         return np.sum(u * A.data * v)
     else:
-        raise NotImplementedError()
+        Av = np.zeros_like(v)
+        mlt(A, v, Av)
+        return np.dot(u, Av)
 
 
 

@@ -1,5 +1,4 @@
 import numpy as np
-from numpy import testing as np_test
 
 
 class Mesh:
