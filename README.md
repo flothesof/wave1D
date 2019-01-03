@@ -1,6 +1,6 @@
 # wave1D
 
-wave1D is a package for the simulation of acoustic / elastic waves in 1D configurations. 
+wave1D is a package for the simulation of acoustic / elastic waves in 1D configurations using Spectral Finite Elements. 
 
 # Installation instructions
 
