@@ -15,24 +15,21 @@ class InitialConditionType(Enum):
     NONE = 2
 
 
-class ElasticExplicitOrderTwo:
+class ViscoElasticKelvinVoigtImplicitOrderTwo:
     """
-    Definition of leap-frog like discrete propagators for elastic models.
+    Definition of discrete propagators for visco elastic model with kelvin voigt constitutive law. The elastic part
+    is explicit but the viscous part uses a centered approximation of order two of the first derivative, hence the
+    scheme is overall implicit.
     """
-    def __init__(self, config, fe_space, mass_assembly_type=fe_op.AssemblyType.LUMPED,
-                 stiffness_assembly_type=fe_op.AssemblyType.ASSEMBLED, init_cond_type=InitialConditionType.NONE):
+    def __init__(self, config, fe_space, init_cond_type=InitialConditionType.NONE):
         """
         Constructor of discrete propagators.
         :param config: Elastic model configuration.
         :param fe_space: input finite element space.
-        :param mass_assembly_type: type of assembling procedure for the mass operator.
-        :param stiffness_assembly_type: type of assembling procedure for the stiffness operator.
         :param init_cond_type: type of initial condition.
         """
         self.config = config
         self.fe_space = fe_space
-        self.mass_assembly_type = mass_assembly_type
-        self.stiffness_assembly_type = stiffness_assembly_type
         self.init_cond_type = init_cond_type
 
         self.u0 = None
@@ -59,9 +56,10 @@ class ElasticExplicitOrderTwo:
         self.u2 = np.zeros(ndof)
         self.ustar = np.zeros(ndof)
 
-        # Assembling mass and stiffness operators.
-        mass = mass_assembler.assemble_mass(self.fe_space, self.config.alpha, self.mass_assembly_type)
-        stiffness = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.beta, self.stiffness_assembly_type)
+        # Assembling mass, stiffness and viscosity operators.
+        mass = mass_assembler.assemble_mass(self.fe_space, self.config.density, fe_op.AssemblyType.LUMPED)
+        stiffness = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.modulus, fe_op.AssemblyType.ASSEMBLED)
+        viscosity = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.eta, fe_op.AssemblyType.ASSEMBLED)
 
         # Computing CFL or setting timestep.
         if timestep is None:
@@ -74,16 +72,16 @@ class ElasticExplicitOrderTwo:
         self.operator1 = fe_op.linear_combination(2.0, mass, -self.timestep ** 2, stiffness)
 
         # Computing operator to apply on u2.
-        self.operator2 = fe_op.clone(-1.0, mass)
+        self.operator2 = fe_op.linear_combination(-1.0, mass, self.timestep * 0.5, viscosity)
         self.__add_boundary_contrib_operator2(self.config.left_boundary_condition, self.fe_space.get_left_idx())
         self.__add_boundary_contrib_operator2(self.config.right_boundary_condition, self.fe_space.get_right_idx())
 
         # Computing rhs operator.
         if self.config.rhs is not None:
-            self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, self.mass_assembly_type)
+            self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, fe_op.AssemblyType.LUMPED)
 
         # Computing inv operator.
-        self.inv_operator = fe_op.clone(1.0, mass)
+        self.inv_operator = fe_op.linear_combination(1.0, mass, self.timestep * 0.5, viscosity)
         self.__add_boundary_contrib_inv_operator(self.config.left_boundary_condition, self.fe_space.get_left_idx())
         self.__add_boundary_contrib_inv_operator(self.config.right_boundary_condition, self.fe_space.get_right_idx())
         fe_op.inv(self.inv_operator)

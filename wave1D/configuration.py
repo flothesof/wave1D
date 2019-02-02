@@ -61,3 +61,80 @@ class Elastic:
         self.left_boundary_condition = left_bc
         self.right_boundary_condition = right_bc
         self.rhs = rhs
+
+
+class ViscoElasticMaxwell:
+    def __init__(self, density=lambda x: 1.0, modulus=lambda x: 1.0, eta=lambda x: 0.0, init_field=lambda x: 0.0,
+                 init_stress=lambda x: 0.0, left_bc=None, right_bc=None, rhs=None):
+        """
+        Constructor for visco-elastic model with Maxwell constitutive law. Input arguments are expected to be a
+        lambda depending on the space variable.
+        :param density: is the mass density.
+        :param modulus: is the elasticity coefficient.
+        :param eta: is the attenuation coefficient.
+        :param init_field: field initial condition.
+        :param init_stress: stress initial condition.
+        :param left_bc: boundary condition on left point (x=0).
+        :param right_bc: boundary condition on right point (x=L).
+        :param rhs: right-hand side in time scheme.
+        """
+        self.density = density
+        self.modulus = modulus
+        self.eta = eta
+        self.init_field = init_field
+        self.init_stress = init_stress
+        self.left_boundary_condition = left_bc
+        self.right_boundary_condition = right_bc
+        self.rhs = rhs
+
+
+class ViscoElasticKelvinVoigt:
+    def __init__(self, density=lambda x: 1.0, modulus=lambda x: 1.0, eta=lambda x: 1.0, init_field=lambda x: 0.0,
+                 init_velocity=lambda x: 0.0, left_bc=None, right_bc=None, rhs=None):
+        """
+        Constructor for visco-elastic model with Kelvin Voigt constitutive law. Input arguments are expected to be a
+        lambda depending on the space variable.
+        :param density: is the mass density.
+        :param modulus: is the elasticity coefficient.
+        :param eta: is the attenuation coefficient.
+        :param init_field: field initial condition.
+        :param init_velocity: velocity initial condition.
+        :param left_bc: boundary condition on left point (x=0).
+        :param right_bc: boundary condition on right point (x=L).
+        :param rhs: right-hand side in time scheme.
+        """
+        self.density = density
+        self.modulus = modulus
+        self.eta = eta
+        self.init_field = init_field
+        self.init_velocity = init_velocity
+        self.left_boundary_condition = left_bc
+        self.right_boundary_condition = right_bc
+        self.rhs = rhs
+
+
+class ViscoElasticZener:
+    def __init__(self, density=lambda x: 1.0, modulus1=lambda x: 1.0, modulus2=lambda x: 1.0, eta=lambda x: 1.0,
+                 init_field=lambda x: 0.0, init_viscous_stress=lambda x: 0.0, left_bc=None, right_bc=None, rhs=None):
+        """
+        Constructor for visco-elastic model with Kelvin Voigt constitutive law. Input arguments are expected to be a
+        lambda depending on the space variable.
+        :param density: is the mass density.
+        :param modulus1: is the first elasticity coefficient.
+        :param modulus2: is the first elasticity coefficient.
+        :param eta: is the attenuation coefficient.
+        :param init_field: field initial condition.
+        :param init_viscous_stress: initial condition for the viscous part of the stress.
+        :param left_bc: boundary condition on left point (x=0).
+        :param right_bc: boundary condition on right point (x=L).
+        :param rhs: right-hand side in time scheme.
+        """
+        self.density = density
+        self.modulus1 = modulus1
+        self.modulus2 = modulus2
+        self.eta = eta
+        self.init_field = init_field
+        self.init_viscous_stress = init_viscous_stress
+        self.left_boundary_condition = left_bc
+        self.right_boundary_condition = right_bc
+        self.rhs = rhs

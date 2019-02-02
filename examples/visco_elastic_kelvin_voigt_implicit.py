@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import wave1D.configuration as configuration
-import wave1D.elastic_propagator as elastic_propagator
+import wave1D.visco_elastic_kelvin_voigt_propagator as visco_elastic_kelvin_voigt_propagator
 import wave1D.functional as functional
 import wave1D.finite_element_space as fe_sp
 import wave1D.finite_element_operator as fe_op
@@ -10,38 +10,35 @@ import wave1D.mass_assembler as mass_assembler
 
 
 # Material properties.
-def celerity(x):
-    return 2.0 + 1.0 * np.exp(-1000 * (x - 0.3) ** 2)
+def rho(x):
+    return 1.0 / 2.0
 
 
-def alpha(x):
-    c = celerity(x)
-    c2 = c * c
-    return 1.0 / c2
-
-
-def beta(x):
+def modulus(x):
     return 2.0
 
 
-# Creating left robin boundary condition.
+def eta(x):
+    return 0.001
+
+
+# Creating left dirichlet boundary condition.
 left_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.DIRICHLET,
                                           value=lambda t: functional.ricker(t - 0.4, 25.0))
 
-absorbing_param = np.sqrt(beta(1.5) * alpha(1.5))
+absorbing_param = np.sqrt(rho(0.) * modulus(0.))
 right_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.ABSORBING,
                                            value=lambda t: 0, param=absorbing_param)
 
 # Creating configuration.
-config = configuration.Elastic(alpha=alpha, beta=beta, left_bc=left_bc, right_bc=right_bc)
+config = configuration.ViscoElasticKelvinVoigt(density=rho, modulus=modulus, eta=eta, left_bc=left_bc,
+                                               right_bc=right_bc)
 
 # Creating finite element space.
 fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 1.5, 140), fe_order=5, quad_order=5)
 
 # Creating propagator.
-propag = elastic_propagator.ElasticExplicitOrderTwo(config=config, fe_space=fe_space,
-                                                    mass_assembly_type=fe_op.AssemblyType.LUMPED,
-                                                    stiffness_assembly_type=fe_op.AssemblyType.ASSEMBLED)
+propag = visco_elastic_kelvin_voigt_propagator.ViscoElasticKelvinVoigtImplicitOrderTwo(config=config, fe_space=fe_space)
 
 # Computing mass operator.
 mass = mass_assembler.assemble_mass(fe_space, assembly_type=fe_op.AssemblyType.LUMPED)
