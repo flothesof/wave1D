@@ -46,13 +46,13 @@ propag = visco_elastic_kelvin_voigt_propagator.ViscoElasticKelvinVoigt(config=co
 mass = mass_assembler.assemble_mass(fe_space, assembly_type=fe_op.AssemblyType.LUMPED)
 
 # Initializing.
-propag.initialize()
+propag.initialize(cfl_factor=0.99999999)
 
 # Runing.
 fig, ax = plt.subplots()
 lines = ax.plot(propag.u0)
 ax.set_ylim((-1, 1))
-for i in range(10000):
+for i in range(50000):
     propag.forward()
     if i % 15 == 0:
         lines[0].set_ydata(propag.u0)
