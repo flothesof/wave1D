@@ -38,7 +38,9 @@ config = configuration.ViscoElasticKelvinVoigt(density=rho, modulus=modulus, eta
 fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 1.5, 140), fe_order=5, quad_order=5)
 
 # Creating propagator.
-propag = visco_elastic_kelvin_voigt_propagator.ViscoElasticKelvinVoigt(config=config, fe_space=fe_space)
+propag = visco_elastic_kelvin_voigt_propagator.ViscoElasticKelvinVoigt(config=config, fe_space=fe_space,
+                                                                       scheme_type=visco_elastic_kelvin_voigt_propagator
+                                                                       .SchemeType.EXPLICIT_ORDERONE)
 
 # Computing mass operator.
 mass = mass_assembler.assemble_mass(fe_space, assembly_type=fe_op.AssemblyType.LUMPED)

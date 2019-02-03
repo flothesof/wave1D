@@ -15,13 +15,19 @@ class InitialConditionType(Enum):
     NONE = 2
 
 
-class ViscoElasticKelvinVoigtImplicitOrderTwo:
+class SchemeType(Enum):
     """
-    Definition of discrete propagators for visco elastic model with kelvin voigt constitutive law. The elastic part
-    is explicit but the viscous part uses a centered approximation of order two of the first derivative, hence the
-    scheme is overall implicit.
+    Definitions of numerical scheme types.
     """
-    def __init__(self, config, fe_space, init_cond_type=InitialConditionType.NONE):
+    IMPLICIT_ORDERTWO = 1
+    EXPLICIT_ORDERONE = 2
+
+
+class ViscoElasticKelvinVoigt:
+    """
+    Definition of discrete propagators for visco elastic model with kelvin voigt constitutive law.
+    """
+    def __init__(self, config, fe_space, scheme_type=SchemeType.IMPLICIT_ORDERTWO, init_cond_type=InitialConditionType.NONE):
         """
         Constructor of discrete propagators.
         :param config: Elastic model configuration.
@@ -31,6 +37,7 @@ class ViscoElasticKelvinVoigtImplicitOrderTwo:
         self.config = config
         self.fe_space = fe_space
         self.init_cond_type = init_cond_type
+        self.scheme_type = scheme_type
 
         self.u0 = None
         self.u1 = None
@@ -61,50 +68,66 @@ class ViscoElasticKelvinVoigtImplicitOrderTwo:
         stiffness = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.modulus, fe_op.AssemblyType.ASSEMBLED)
         viscosity = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.eta, fe_op.AssemblyType.ASSEMBLED)
 
-        # Computing CFL or setting timestep.
-        if timestep is None:
-            cfl = 2.0 / np.sqrt(fe_op.spectral_radius(mass, stiffness))
-            self.timestep = cfl_factor * cfl
-        else:
-            self.timestep = timestep
+        if self.scheme_type is SchemeType.IMPLICIT_ORDERTWO:
 
-        # Computing operator to apply on u1.
-        self.operator1 = fe_op.linear_combination(2.0, mass, -self.timestep ** 2, stiffness)
+            # Computing CFL or setting timestep.
+            if timestep is None:
+                cfl = 2.0 / np.sqrt(fe_op.spectral_radius(mass, stiffness))
+                self.timestep = cfl_factor * cfl
+            else:
+                self.timestep = timestep
 
-        # Computing operator to apply on u2.
-        self.operator2 = fe_op.linear_combination(-1.0, mass, self.timestep * 0.5, viscosity)
-        self.__add_boundary_contrib_operator2(self.config.left_boundary_condition, self.fe_space.get_left_idx())
-        self.__add_boundary_contrib_operator2(self.config.right_boundary_condition, self.fe_space.get_right_idx())
+            # Computing operator to apply on u1.
+            self.operator1 = fe_op.linear_combination(2.0, mass, -self.timestep ** 2, stiffness)
 
-        # Computing rhs operator.
-        if self.config.rhs is not None:
-            self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, fe_op.AssemblyType.LUMPED)
+            # Computing operator to apply on u2.
+            self.operator2 = fe_op.linear_combination(-1.0, mass, self.timestep * 0.5, viscosity)
+            self.__add_boundary_contrib_operator2(self.config.left_boundary_condition, self.fe_space.get_left_idx())
+            self.__add_boundary_contrib_operator2(self.config.right_boundary_condition, self.fe_space.get_right_idx())
 
-        # Computing inv operator.
-        self.inv_operator = fe_op.linear_combination(1.0, mass, self.timestep * 0.5, viscosity)
-        self.__add_boundary_contrib_inv_operator(self.config.left_boundary_condition, self.fe_space.get_left_idx())
-        self.__add_boundary_contrib_inv_operator(self.config.right_boundary_condition, self.fe_space.get_right_idx())
-        fe_op.inv(self.inv_operator)
+            # Computing rhs operator.
+            if self.config.rhs is not None:
+                self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, fe_op.AssemblyType.LUMPED)
+
+            # Computing inv operator.
+            self.inv_operator = fe_op.linear_combination(1.0, mass, self.timestep * 0.5, viscosity)
+            self.__add_boundary_contrib_inv_operator(self.config.left_boundary_condition, self.fe_space.get_left_idx())
+            self.__add_boundary_contrib_inv_operator(self.config.right_boundary_condition, self.fe_space.get_right_idx())
+            fe_op.inv(self.inv_operator)
+
+        elif self.scheme_type is SchemeType.EXPLICIT_ORDERONE:
+
+            # Computing CFL or setting timestep.
+            if timestep is None:
+                r_stiff = fe_op.spectral_radius(mass, stiffness)
+                r_visc = fe_op.spectral_radius(mass, viscosity)
+                cfl = (np.sqrt(1.0 + r_stiff / (r_visc ** 2)) - 1.0) * (r_visc / r_stiff)
+                self.timestep = cfl_factor * cfl
+            else:
+                self.timestep = timestep
+
+            # Computing operator to apply on u1.
+            tmp_operator = fe_op.linear_combination(2.0, mass, -self.timestep ** 2, stiffness)
+            self.operator1 = fe_op.linear_combination(1.0, tmp_operator, -self.timestep, viscosity)
+
+            # Computing operator to apply on u2.
+            self.operator2 = fe_op.linear_combination(-1.0, mass, self.timestep, viscosity)
+            self.__add_boundary_contrib_operator2(self.config.left_boundary_condition, self.fe_space.get_left_idx())
+            self.__add_boundary_contrib_operator2(self.config.right_boundary_condition, self.fe_space.get_right_idx())
+
+            # Computing rhs operator.
+            if self.config.rhs is not None:
+                self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, fe_op.AssemblyType.LUMPED)
+
+            # Computing inv operator.
+            self.inv_operator = fe_op.clone(1.0, mass)
+            self.__add_boundary_contrib_inv_operator(self.config.left_boundary_condition, self.fe_space.get_left_idx())
+            self.__add_boundary_contrib_inv_operator(self.config.right_boundary_condition, self.fe_space.get_right_idx())
+            fe_op.inv(self.inv_operator)
 
         # Applying initial conditions.
-        if self.init_cond_type is InitialConditionType.ORDERONE:
-
-            for i, x in enumerate(self.fe_space.get_dof_coords()):
-                self.u2[i] = self.config.init_field(x)
-                self.u1[i] = self.timestep * self.config.init_velocity(x) + self.u2[i]
-
-        elif self.init_cond_type is InitialConditionType.ORDERTWO:
-
-            for i, x in enumerate(self.fe_space.get_dof_coords()):
-                self.u2[i] = self.config.init_field(x)
-
-            fe_op.mlt(stiffness, self.u2, self.ustar)
-            fe_op.inv(mass)
-            fe_op.mlt(mass, self.ustar, self.u1)
-
-            for i, x in enumerate(self.fe_space.get_dof_coords()):
-                self.u1[i] = self.timestep * self.config.init_velocity(x) + self.u2[i] \
-                             - 0.5 * (self.timestep ** 2) * self.u1[i]
+        if self.init_cond_type is not InitialConditionType.NONE:
+            raise NotImplementedError()
 
     def forward(self):
         """
