@@ -46,7 +46,7 @@ propag = visco_elastic_kelvin_voigt_propagator.ViscoElasticKelvinVoigt(config=co
 mass = mass_assembler.assemble_mass(fe_space, assembly_type=fe_op.AssemblyType.LUMPED)
 
 # Initializing.
-propag.initialize(cfl_factor=0.99999999)
+propag.initialize()
 
 # Runing.
 fig, ax = plt.subplots()
