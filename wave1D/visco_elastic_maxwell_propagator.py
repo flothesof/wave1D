@@ -16,9 +16,9 @@ class InitialConditionType(Enum):
     NONE = 2
 
 
-class ViscoElasticZener:
+class ViscoElasticMaxwell:
     """
-    Definition of discrete propagators for visco elastic model with Zener constitutive law.
+    Definition of discrete propagators for visco elastic model with Maxwell constitutive law.
     """
     def __init__(self, config, fe_space, init_cond_type=InitialConditionType.NONE):
         """
@@ -43,12 +43,12 @@ class ViscoElasticZener:
         self.rhs_operator_u = None
         self.inv_operator_u = None
 
-        # Internal variable unknown.
+        # Stress unknown.
         self.s0 = None
         self.s1 = None
         self.sstar = None
 
-        # Internal variable operators.
+        # Stress operators.
         self.operator1_s = None
         self.inv_operator_s = None
 
@@ -80,36 +80,19 @@ class ViscoElasticZener:
         self.s1 = np.zeros(ndof_l2)
         self.sstar = np.zeros(ndof_l2)
 
-        # Extracting material parameteris.
-        rho = self.config.density
-        k1 = self.config.modulus1
-        k2 = self.config.modulus2
-        eta = self.config.eta
-
-        # Definition of reological material parameters.
-        def MR(x):
-            return k1(x) * k2(x) / (k1(x) + k2(x))
-
-        def tau_sigma(x):
-            return eta(x) / (k1(x) + k2(x))
-
-        def tau_eps(x):
-            return eta(x) / k2(x)
-
         # Definition of material parameters used in assembling procedures.
-        def tau_s(x):
-            return 1.0 / (MR(x) * (tau_eps(x) - tau_sigma(x)))
+        def mu(x):
+            return 1.0 / self.config.modulus(x)
 
-        def tau_prime_s(x):
-            return tau_sigma(x) * tau_s(x)
+        def nu(x):
+            return 1.0 / self.config.eta(x)
 
         # Assembling displacement operators.
-        mass_rho = mass_assembler.assemble_mass(self.fe_space, rho, fe_op.AssemblyType.LUMPED)
-        stiffness_MR = stiffness_assembler.assemble_stiffness(self.fe_space, MR)
+        mass_rho = mass_assembler.assemble_mass(self.fe_space, self.config.density, fe_op.AssemblyType.LUMPED)
 
-        # Assembling internal variable operators.
-        mass_tau_s = mass_assembler.assemble_discontinuous_mass(self.fe_space, tau_s, fe_op.AssemblyType.LUMPED)
-        mass_tau_prime_s = mass_assembler.assemble_discontinuous_mass(self.fe_space, tau_prime_s, fe_op.AssemblyType.LUMPED)
+        # Assembling stress variable operators.
+        mass_mu = mass_assembler.assemble_discontinuous_mass(self.fe_space, mu, fe_op.AssemblyType.LUMPED)
+        mass_nu = mass_assembler.assemble_discontinuous_mass(self.fe_space, nu, fe_op.AssemblyType.LUMPED)
 
         # Computing gradient operators.
         self.gradient = gradient_assembler.assemble_gradient(self.fe_space)
@@ -117,14 +100,14 @@ class ViscoElasticZener:
 
         # Computing CFL or setting timestep
         if timestep is None:
-            stiffness_k1 = stiffness_assembler.assemble_stiffness(self.fe_space, k1)
-            cfl = 2.0 / np.sqrt(fe_op.spectral_radius(mass_rho, stiffness_k1))
+            stiffness_M = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.modulus)
+            cfl = 2.0 / np.sqrt(fe_op.spectral_radius(mass_rho, stiffness_M))
             self.timestep = cfl_factor * cfl
         else:
             self.timestep = timestep
 
         # Computing operator applied on u1
-        self.operator1_u = fe_op.linear_combination(2.0, mass_rho, -self.timestep ** 2, stiffness_MR)
+        self.operator1_u = fe_op.clone(2.0, mass_rho)
 
         # Computing operator applied on u2
         self.operator2_u = fe_op.clone(-1.0, mass_rho)
@@ -138,10 +121,10 @@ class ViscoElasticZener:
         fe_op.inv(self.inv_operator_u)
 
         # Computing operator applied on s1.
-        self.operator1_s = fe_op.linear_combination(1.0, mass_tau_prime_s, -self.timestep * 0.5, mass_tau_s)
+        self.operator1_s = fe_op.linear_combination(1.0, mass_mu, -self.timestep * 0.5, mass_nu)
 
         # Computing inv operator applied on internal variable.
-        self.inv_operator_s = fe_op.linear_combination(1.0, mass_tau_prime_s, self.timestep * 0.5, mass_tau_s)
+        self.inv_operator_s = fe_op.linear_combination(1.0, mass_mu, self.timestep * 0.5, mass_nu)
         fe_op.inv(self.inv_operator_s)
 
         # Computing rhs operator.
@@ -246,4 +229,3 @@ class ViscoElasticZener:
                 self.ustar[b_idx] = bc.value(self.time)
             else:
                 self.ustar[b_idx] += self.timestep * self.timestep * bc.value(self.time)
-

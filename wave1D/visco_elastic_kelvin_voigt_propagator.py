@@ -25,7 +25,7 @@ class SchemeType(Enum):
 
 class ViscoElasticKelvinVoigt:
     """
-    Definition of discrete propagators for visco elastic model with kelvin voigt constitutive law.
+    Definition of discrete propagators for visco elastic model with Kelvin Voigt constitutive law.
     """
     def __init__(self, config, fe_space, scheme_type=SchemeType.IMPLICIT_ORDERTWO, init_cond_type=InitialConditionType.NONE):
         """
