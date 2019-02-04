@@ -6,7 +6,7 @@ import wave1D.functional as functional
 import wave1D.finite_element_space as fe_sp
 import wave1D.mesh as mesh
 
-target_law = 1.0e-1
+target_law = 5.0e-2
 
 
 # Material properties.
@@ -16,6 +16,7 @@ def rho(x):
 
 def modulus(x):
     return 288.0
+
 
 def eta(x):
     vp = np.sqrt(modulus(x) / rho(x))
