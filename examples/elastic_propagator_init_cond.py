@@ -21,7 +21,7 @@ config = configuration.Elastic(init_field=lambda x: np.sqrt(2.0) * np.cos(k * np
 fe_space = fe_sp.FiniteElementSpace(mesh.make_mesh_from_npt(0.0, 1.0, 6), fe_order=5, quad_order=5)
 
 # Creating propagator.
-numerical_propagator = elastic_propagator.ElasticExplicitOrderTwo(config, fe_space,
+numerical_propagator = elastic_propagator.Elastic(config, fe_space,
                                                       init_cond_type=elastic_propagator.InitialConditionType.ORDERTWO)
 
 # Initializing numerical propagator.

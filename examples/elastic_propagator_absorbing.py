@@ -39,7 +39,7 @@ config = configuration.Elastic(alpha=alpha, beta=beta, left_bc=left_bc, right_bc
 fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 1.5, 140), fe_order=5, quad_order=5)
 
 # Creating propagator.
-propag = elastic_propagator.ElasticExplicitOrderTwo(config=config, fe_space=fe_space,
+propag = elastic_propagator.Elastic(config=config, fe_space=fe_space,
                                                     mass_assembly_type=fe_op.AssemblyType.LUMPED,
                                                     stiffness_assembly_type=fe_op.AssemblyType.ASSEMBLED)
 

@@ -76,19 +76,20 @@ def mlt(A, u, v):
         v[:] = A.data * u
 
 
-def mlt_add(A, u, v):
+def mlt_add(A, u, v, coef=1.0):
     """
-    Performing operation v <- v + A * u
+    Performing operation v <- v + coef * A * u
     :param A: input finite element operator.
     :param u: input vector.
     :param v: output vector.
+    :param coef: scalar multiplicatic coefficient.
     """
     if A.assembly_type is AssemblyType.ASSEMBLED:
-        v[:] += A.data.dot(u)
+        v[:] += coef * A.data.dot(u)
     elif A.assembly_type is AssemblyType.LOCALLY_ASSEMBLED:
         raise NotImplementedError()
     elif A.assembly_type is AssemblyType.LUMPED:
-        v[:] += A.data * u
+        v[:] += coef * A.data * u
 
 
 def inv(A):

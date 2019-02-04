@@ -65,8 +65,8 @@ class ViscoElasticKelvinVoigt:
 
         # Assembling mass, stiffness and viscosity operators.
         mass = mass_assembler.assemble_mass(self.fe_space, self.config.density, fe_op.AssemblyType.LUMPED)
-        stiffness = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.modulus, fe_op.AssemblyType.ASSEMBLED)
-        viscosity = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.eta, fe_op.AssemblyType.ASSEMBLED)
+        stiffness = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.modulus)
+        viscosity = stiffness_assembler.assemble_stiffness(self.fe_space, self.config.eta)
 
         if self.scheme_type is SchemeType.IMPLICIT_ORDERTWO:
 

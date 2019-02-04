@@ -26,6 +26,23 @@ def assemble_mass(fe_space, density=lambda x: 1.0, assembly_type=fe_op.AssemblyT
     return mass
 
 
+def assemble_discontinuous_mass(fe_space, density=lambda x: 1.0, assembly_type=fe_op.AssemblyType.ASSEMBLED):
+    """
+    Assembling discontinuous mass matrix.
+    :param fe_space: input finite element space.
+    :param density: function of space variable.
+    :param assembly_type: type of assembling procedure.
+    :return: instance of FiniteElementOperator class representing the discontinuous mass operator.
+    """
+    if assembly_type is fe_op.AssemblyType.LUMPED:
+        discontinuous_mass = fe_op.FiniteElementOperator(fe_space=fe_sp.FiniteElementSpace(), assembly_type=assembly_type)
+        discontinuous_mass.data = np.zeros(fe_space.get_nelem() * fe_space.get_nlocaldof())
+        apply_discontinuous_mass_lumping(fe_space, density, discontinuous_mass.data)
+        return discontinuous_mass
+    else:
+        raise NotImplementedError()
+
+
 def apply_mass_assembling(fe_space, density, mass):
     """
     Applying mass assembling procedure on a finite element operator.
@@ -54,6 +71,22 @@ def apply_mass_lumping(fe_space, density, mass):
     if len(mass.shape) is 1:
         for ie in range(fe_space.get_nelem()):
             mass[fe_space.locals_to_globals(ie)] += fe_space.eval_at_quadrature_pnts(
+                lambda k, s:
+                fe_space.get_quadrature_weight(k) * fe_space.get_elem_length(ie) * density(fe_space.get_coord(ie, s)))
+    else:
+        raise ValueError("Expecting one dimensional array when applying mass lumping.")
+
+
+def apply_discontinuous_mass_lumping(fe_space, density, mass):
+    """
+    Applying discontinuous mass lumping procedure on a finite element operator.
+    :param fe_space: finite element space.
+    :param density: mass density, function of space variable.
+    :param mass: array bearing the lumping procedure.
+    """
+    if len(mass.shape) is 1:
+        for ie in range(fe_space.get_nelem()):
+            mass[fe_space.locals_to_globals_discontinuous(ie)] = fe_space.eval_at_quadrature_pnts(
                 lambda k, s:
                 fe_space.get_quadrature_weight(k) * fe_space.get_elem_length(ie) * density(fe_space.get_coord(ie, s)))
     else:

@@ -37,9 +37,9 @@ def test_mlt_add():
 
     u = np.array([1.0, 1.0, 1.0])
     v = np.array([2.0, 3.0, 4.0])
-    fe_op.mlt_add(op, u, v)
+    fe_op.mlt_add(op, u, v, coef=2.0)
 
-    np_test.assert_array_almost_equal(v, [3.0, 5.0, 7.0])
+    np_test.assert_array_almost_equal(v, [4.0, 7.0, 10.0])
 
     # Testing lumped case.
     op = fe_op.make_from_data(np.array([1.0, 2.0, 3.0]), fe_op.AssemblyType.LUMPED)

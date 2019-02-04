@@ -47,6 +47,14 @@ def test_locals_to_globals():
     np_test.assert_array_equal(fe_space.locals_to_globals(1), [3, 4, 5, 6])
 
 
+def test_locals_to_globals_discontinuous():
+    """
+    Testing extracting of global indexes in discontinuous numbering from an element index.
+    """
+    fe_space = fe_sp.FiniteElementSpace(mesh.Mesh([0.0, -1.0, -4.0]), fe_order=3)
+    np_test.assert_array_equal(fe_space.locals_to_globals_discontinuous(0), [0, 1, 2, 3])
+    np_test.assert_array_equal(fe_space.locals_to_globals_discontinuous(1), [4, 5, 6, 7])
+
 def test_get_quadrature_weight():
     """
     Testing extractin of quadrature weights.

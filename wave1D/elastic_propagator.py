@@ -15,7 +15,7 @@ class InitialConditionType(Enum):
     NONE = 2
 
 
-class ElasticExplicitOrderTwo:
+class Elastic:
     """
     Definition of leap-frog like discrete propagators for elastic models.
     """

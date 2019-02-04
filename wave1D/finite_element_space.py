@@ -81,6 +81,15 @@ class FiniteElementSpace:
         offset = elem_idx * (self.get_nlocaldof() - 1)
         return np.linspace(0, self.get_nlocaldof() - 1, self.get_nlocaldof(), dtype=int) + offset
 
+    def locals_to_globals_discontinuous(self, elem_idx):
+        """
+        Extracting index mappings from local numbering to global discontinuous numbering.
+        :param elem_idx: element index in the mesh.
+        :return: a 1D array regrouping the global indexes in discontinuous numbering.
+        """
+        offset = elem_idx * self.get_nlocaldof()
+        return np.linspace(0, self.get_nlocaldof() - 1, self.get_nlocaldof(), dtype=int) + offset
+
     def get_quadrature_weight(self, quad_pnt_idx):
         """
         Extracting value of a quadrature weight.
@@ -120,3 +129,13 @@ class FiniteElementSpace:
         :return: a matrix resulting from dbasis * D * basis^T
         """
         return np.dot(self.dbasis, np.dot(np.diag(diag), self.dbasis.transpose()))
+
+    def apply_basis_diag_dbasis(self, diag):
+        """
+        Computing the result of basis * D * dbasis^T, where dbasis are the first derivative of the Lagrange basis
+        functions in the reference element evaluated at the quadrature points.
+        :param diag: the diagonal of a matrix of dimension equals to the number of quadrature points
+        in the reference element.
+        :return: a matrix resulting from dbasis * D * basis^T
+        """
+        return np.dot(self.basis, np.dot(np.diag(diag), self.dbasis.transpose()))
