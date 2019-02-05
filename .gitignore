@@ -1,4 +1,5 @@
 /.idea/
 /wave1D.egg-info/
+*.txt
 
 .cache/v/cache/lastfailed
