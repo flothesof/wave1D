@@ -10,25 +10,28 @@ import wave1D.signal_processing as signal_processing
 
 # Simulation parameters.
 show_snapshot = False
-make_output = True
-n_step = 5000
-central_frequency = 4.0
-src_offset = 0.5
+make_output = False
+n_step = 20000
+central_frequency = 6.0
+src_offset = 2.0
 
 # Material properties.
 target_law = 1.0e-1
+
+# definition of target velocity.
+target_vp = 6.0
+
 
 def rho(x):
     return 8.0
 
 
 def modulus(x):
-    return 288.0
+    return rho(x) * (target_vp ** 2)
 
 
 def eta(x):
-    vp = np.sqrt(modulus(x) / rho(x))
-    return modulus(x) / (2.0 * target_law * vp)
+    return modulus(x) / (2.0 * target_law * target_vp)
 
 
 # Creating left dirichlet boundary condition.
@@ -85,27 +88,34 @@ else:
 
     # Computing exact solution without attenuation
     T = n_step * propag.timestep
-    exact_solution_no_att = functional.ricker(np.linspace(0., T, n_step) - src_offset, central_frequency)
+    times = np.linspace(0., T, n_step)
+    exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
 
     # Computing frequency components.
     obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, T, propag.timestep)
     exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, T, propag.timestep)
 
     # Compouting attenuation law.
-    idx_div = np.abs(exact_solution_no_att_f) > 1.0e-6
-    numerical_law = -np.log(obs_sol_f[idx_div] / (exact_solution_no_att_f[idx_div])) / obs_coord
+    idx_div = np.abs(exact_solution_no_att_f) > 1.0e-16
+    numerical_law = (np.log(exact_solution_no_att_f) - np.log(obs_sol_f)) / obs_coord
 
     # Plotting frequency analysis and attenuation law.
-    plt.subplot(211)
+    plt.subplot(311)
     plt.plot(freqs, obs_sol_f)
     plt.plot(freqs, exact_solution_no_att_f)
     plt.xlim([0., 10.0])
 
-    plt.subplot(212)
-    plt.plot(freqs[idx_div], numerical_law)
-    plt.plot(freqs[idx_div], target_law * np.ones_like(freqs)[idx_div])
+    plt.subplot(312)
+    plt.plot(freqs, numerical_law)
+    plt.plot(freqs, target_law * np.ones_like(freqs))
     plt.xlim([0., 10.0])
     plt.ylim([0., target_law + target_law / 10.0])
+
+    plt.subplot(313)
+    plt.plot(times, obs_sol)
+    plt.plot(times, exact_solution_no_att)
+    plt.xlim([0., np.max(times)])
+    plt.ylim([-1.0, 1.0])
     plt.show()
 
     if make_output is True:

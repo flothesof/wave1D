@@ -10,11 +10,13 @@ import wave1D.signal_processing as signal_processing
 
 # Simulation parameters.
 show_snapshot = False
-make_output = True
-n_step = 10000
+make_output = False
+n_step = 20000
 central_frequency = 6.0
-src_offset = 1.0
+src_offset = 2.0
 
+# definition of target velocity.
+target_vp = 6.0
 
 # Material properties.
 target_law_coef = 1.0e-4
@@ -25,12 +27,11 @@ def rho(x):
 
 
 def modulus(x):
-    return 288.0
+    return rho(x) * (target_vp ** 2)
 
 
 def eta(x):
-    vp = np.sqrt(modulus(x) / rho(x))
-    return 2.0 * modulus(x) * vp * target_law_coef
+    return 2.0 * modulus(x) * target_vp * target_law_coef
 
 
 # Creating left dirichlet boundary condition.
@@ -88,32 +89,38 @@ else:
 
     # Computing exact solution without attenuation
     T = n_step * propag.timestep
-    exact_solution_no_att = functional.ricker(np.linspace(0., T, n_step) - src_offset, central_frequency)
+    times = np.linspace(0., T, n_step)
+    exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
 
     # Computing frequency components.
     obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, T, propag.timestep)
     exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, T, propag.timestep)
 
     # Compouting attenuation law.
-    idx_div = np.abs(exact_solution_no_att_f) > 1.0e-12
-    numerical_law = -np.log(obs_sol_f[idx_div] / (exact_solution_no_att_f[idx_div])) / obs_coord
+    numerical_law = (np.log(exact_solution_no_att_f) - np.log(obs_sol_f)) / obs_coord
     target_law = target_law_coef * (2.0 * np.pi * freqs) ** 2
 
     # Plotting frequency analysis and attenuation law.
-    plt.subplot(211)
+    plt.subplot(311)
     plt.plot(freqs, obs_sol_f)
     plt.plot(freqs, exact_solution_no_att_f)
     plt.xlim([0., 10.0])
 
-    plt.subplot(212)
-    plt.plot(freqs[idx_div], numerical_law)
-    plt.plot(freqs[idx_div], target_law[idx_div])
+    plt.subplot(312)
+    plt.plot(freqs, numerical_law)
+    plt.plot(freqs, target_law)
     plt.xlim([0., 10.0])
     plt.ylim([0., 0.30])
+
+    plt.subplot(313)
+    plt.plot(times, obs_sol)
+    plt.plot(times, exact_solution_no_att)
+    plt.xlim([0., np.max(times)])
+    plt.ylim([-1.0, 1.0])
     plt.show()
 
     if make_output is True:
-        np.savetxt('kelving_voigt_numerical_solution_attenuation.txt', obs_sol_f)
-        np.savetxt('kelving_voigt_exact_solution_no_attenuation.txt', exact_solution_no_att_f)
-        np.savetxt('kelving_voigt_frequencies.txt', freqs)
+        np.savetxt('kelving_voigt_implicit_numerical_solution_attenuation.txt', obs_sol_f)
+        np.savetxt('kelving_voigt_implicit_exact_solution_no_attenuation.txt', exact_solution_no_att_f)
+        np.savetxt('kelving_voigt_implicit_frequencies.txt', freqs)
 
