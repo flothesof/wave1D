@@ -11,15 +11,15 @@ import wave1D.signal_processing as signal_processing
 # Simulation parameters.
 show_snapshot = False
 make_output = False
-n_step = 20000
-central_frequency = 6.0
-src_offset = 2.0
+n_step = 5000
+central_frequency = 4.0
+src_offset = 1.0
 
 # definition of target velocity.
 target_vp = 6.0
 
 # Material properties.
-target_law_coef = 1.0e-4
+target_law_coef = 1.0e-5
 
 
 def rho(x):
@@ -53,7 +53,7 @@ fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 10.0, 300)
 propag = visco_elastic_kelvin_voigt_propagator.ViscoElasticKelvinVoigt(config=config, fe_space=fe_space)
 
 # Initializing.
-propag.initialize(cfl_factor=0.5)
+propag.initialize()
 
 # Runing.
 if show_snapshot:
@@ -110,7 +110,7 @@ else:
     plt.plot(freqs, numerical_law)
     plt.plot(freqs, target_law)
     plt.xlim([0., 10.0])
-    plt.ylim([0., 0.30])
+    plt.ylim([0., 0.05])
 
     plt.subplot(313)
     plt.plot(times, obs_sol)
