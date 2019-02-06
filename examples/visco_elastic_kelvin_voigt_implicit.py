@@ -97,7 +97,7 @@ else:
     exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, T, propag.timestep)
 
     # Compouting attenuation law.
-    numerical_law = (np.log(exact_solution_no_att_f) - np.log(obs_sol_f)) / obs_coord
+    numerical_law = (np.log(np.abs(exact_solution_no_att_f)) - np.log(np.abs(obs_sol_f))) / obs_coord
     target_law = target_law_coef * (2.0 * np.pi * freqs) ** 2
 
     # Plotting frequency analysis and attenuation law.

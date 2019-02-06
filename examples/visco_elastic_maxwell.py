@@ -10,10 +10,10 @@ import wave1D.signal_processing as signal_processing
 
 # Simulation parameters.
 show_snapshot = False
-make_output = False
-n_step = 20000
-central_frequency = 6.0
-src_offset = 2.0
+make_output = True
+n_step = 5000
+central_frequency = 4.0
+src_offset = 1.0
 
 # Material properties.
 target_law = 1.0e-1
@@ -90,19 +90,23 @@ else:
     T = n_step * propag.timestep
     times = np.linspace(0., T, n_step)
     exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
+    exact_solution_att = signal_processing.apply_attenuation_filter(exact_solution_no_att, T, propag.timestep,
+                                                                    path_length=obs_coord,
+                                                                    attenuation_filter=lambda f: target_law)
 
     # Computing frequency components.
     obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, T, propag.timestep)
+    exact_solution_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_att, T, propag.timestep)
     exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, T, propag.timestep)
 
     # Compouting attenuation law.
-    idx_div = np.abs(exact_solution_no_att_f) > 1.0e-16
-    numerical_law = (np.log(exact_solution_no_att_f) - np.log(obs_sol_f)) / obs_coord
+    numerical_law = (np.log(np.abs(exact_solution_no_att_f)) - np.log(np.abs(obs_sol_f))) / obs_coord
 
     # Plotting frequency analysis and attenuation law.
     plt.subplot(311)
-    plt.plot(freqs, obs_sol_f)
-    plt.plot(freqs, exact_solution_no_att_f)
+    plt.plot(freqs, np.abs(obs_sol_f))
+    plt.plot(freqs, np.abs(exact_solution_att_f))
+    plt.plot(freqs, np.abs(exact_solution_no_att_f))
     plt.xlim([0., 10.0])
 
     plt.subplot(312)
@@ -113,15 +117,26 @@ else:
 
     plt.subplot(313)
     plt.plot(times, obs_sol)
+    plt.plot(times, exact_solution_att)
     plt.plot(times, exact_solution_no_att)
     plt.xlim([0., np.max(times)])
     plt.ylim([-1.0, 1.0])
     plt.show()
 
     if make_output is True:
-        np.savetxt('maxwell_numerical_solution_attenuation.txt', obs_sol_f)
-        np.savetxt('maxwell_exact_solution_no_attenuation.txt', exact_solution_no_att_f)
+        np.savetxt('maxwell_numerical_solution_f.txt', np.abs(obs_sol_f))
+        np.savetxt('maxwell_exact_solution_att_f.txt', np.abs(exact_solution_att_f))
+        np.savetxt('maxwell_exact_solution_no_att_f.txt', np.abs(exact_solution_no_att_f))
+
+        np.savetxt('maxwell_numerical_law.txt', numerical_law)
+        np.savetxt('maxwell_target_law.txt', target_law * np.ones_like(freqs))
+
+        np.savetxt('maxwell_numerical_solution.txt', obs_sol)
+        np.savetxt('maxwell_exact_solution_att.txt', exact_solution_att)
+        np.savetxt('maxwell_exact_solution_no_att.txt', exact_solution_no_att)
+
         np.savetxt('maxwell_frequencies.txt', freqs)
+        np.savetxt('maxwell_observation_point.txt', np.array([obs_coord]))
 
 
 
