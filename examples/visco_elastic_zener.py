@@ -145,7 +145,7 @@ else:
     plt.show()
 
     if make_output is True:
-        np.savetxt('zenzer_times.txt', times)
+        np.savetxt('zener_times.txt', times)
 
         np.savetxt('zener_numerical_solution_f.txt', np.abs(obs_sol_f))
         np.savetxt('zener_exact_solution_att_f.txt', np.abs(exact_solution_att_f))
