@@ -93,8 +93,8 @@ else:
     exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
 
     # Computing frequency components.
-    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, T, propag.timestep)
-    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, T, propag.timestep)
+    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, propag.timestep)
+    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, propag.timestep)
 
     # Compouting attenuation law.
     numerical_law = (np.log(np.abs(exact_solution_no_att_f)) - np.log(np.abs(obs_sol_f))) / obs_coord

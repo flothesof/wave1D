@@ -101,7 +101,7 @@ class ViscoElasticKelvinVoigt:
             if timestep is None:
                 r_stiff = fe_op.spectral_radius(mass, stiffness)
                 r_visc = fe_op.spectral_radius(mass, viscosity)
-                cfl = -(0.5 * r_visc - np.sqrt((r_visc ** 2) / 4.0 + r_stiff)) / (0.5 * r_stiff)
+                cfl = (np.sqrt((4.0 * r_stiff) / (r_visc**2) + 1.0) - 1.0) * (r_visc / r_stiff)
                 self.timestep = cfl_factor * cfl
             else:
                 self.timestep = timestep

@@ -110,14 +110,14 @@ else:
     T = n_step * propag.timestep
     times = np.linspace(0., T, n_step)
     exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
-    exact_solution_att = signal_processing.apply_attenuation_filter(exact_solution_no_att, T, propag.timestep,
+    exact_solution_att = signal_processing.apply_attenuation_filter(exact_solution_no_att, propag.timestep,
                                                                     path_length=obs_coord,
                                                                     attenuation_filter=lambda f: law_slope * 2.0 * np.pi * f)
 
     # Computing frequency components.
-    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, T, propag.timestep)
-    exact_solution_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_att, T, propag.timestep)
-    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, T, propag.timestep)
+    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, propag.timestep)
+    exact_solution_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_att, propag.timestep)
+    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, propag.timestep)
 
     # Compouting attenuation law.
     numerical_law = (np.log(np.abs(exact_solution_no_att_f)) - np.log(np.abs(obs_sol_f))) / obs_coord

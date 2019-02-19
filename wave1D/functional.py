@@ -19,4 +19,4 @@ def gated_cosine(x, f, sigma):
     :param sigma: gaussian gate standard variation.
     :return: gated cosine function evaluated in input coordinates.
     """
-    return np.exp(-(x / sigma)**2) * np.cos(f * np.pi * x)
+    return np.exp(-(x / sigma)**2) * np.cos(2.0 * np.pi * f *x)
