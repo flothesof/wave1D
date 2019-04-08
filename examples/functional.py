@@ -8,14 +8,13 @@ n = 1500
 dt = T / n
 
 t = np.linspace(0., T, n)
-# u = functional.ricker(t - 2.0, 4.0)
-u = functional.gated_cosine(t-2.0, 4.0, 0.5)
-uhat, freqs = signal_processing.frequency_synthesis(u, T, dt)
+u = functional.hanning(t, 4.0, 6)
+uhat, freqs = signal_processing.frequency_synthesis(u, dt)
 v = np.fft.irfft(uhat)
 
 plt.subplot(211)
-plt.plot(t, u)
-plt.plot(t, v)
+plt.plot(t, u / np.max(u))
+plt.plot(t, v / np.max(v))
 
 plt.subplot(212)
 plt.plot(freqs, np.abs(uhat))
