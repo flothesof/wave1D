@@ -82,30 +82,20 @@ class ViscoElasticZener:
 
         # Extracting material parameteris.
         rho = self.config.density
-        k1 = self.config.modulus1
-        k2 = self.config.modulus2
+        modulus = self.config.modulus
         eta = self.config.eta
-
-        # Definition of reological material parameters.
-        def MR(x):
-            return k1(x) * k2(x) / (k1(x) + k2(x))
-
-        def tau_sigma(x):
-            return eta(x) / (k1(x) + k2(x))
-
-        def tau_eps(x):
-            return eta(x) / k2(x)
+        tau = self.config.tau
 
         # Definition of material parameters used in assembling procedures.
         def tau_s(x):
-            return 1.0 / (MR(x) * (tau_eps(x) - tau_sigma(x)))
+            return 1.0 / (tau(x) * (eta(x) - modulus(x)))
 
         def tau_prime_s(x):
-            return tau_sigma(x) * tau_s(x)
+            return 1.0 / (eta(x) - modulus(x))
 
         # Assembling displacement operators.
         mass_rho = mass_assembler.assemble_mass(self.fe_space, rho, fe_op.AssemblyType.LUMPED)
-        stiffness_MR = stiffness_assembler.assemble_stiffness(self.fe_space, MR)
+        stiffness_MR = stiffness_assembler.assemble_stiffness(self.fe_space, modulus)
 
         # Assembling internal variable operators.
         mass_tau_s = mass_assembler.assemble_discontinuous_mass(self.fe_space, tau_s, fe_op.AssemblyType.LUMPED)
@@ -117,7 +107,7 @@ class ViscoElasticZener:
 
         # Computing CFL or setting timestep
         if timestep is None:
-            stiffness_k1 = stiffness_assembler.assemble_stiffness(self.fe_space, k1)
+            stiffness_k1 = stiffness_assembler.assemble_stiffness(self.fe_space, eta)
             cfl = 2.0 / np.sqrt(fe_op.spectral_radius(mass_rho, stiffness_k1))
             self.timestep = cfl_factor * cfl
         else:

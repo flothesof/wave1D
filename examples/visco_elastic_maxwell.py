@@ -14,24 +14,22 @@ make_output = True
 n_step = 5000
 central_frequency = 4.0
 src_offset = 1.0
+n_fft = 16384
 
-# Material properties.
-target_law = 1.0e-1
-
-# definition of target velocity.
+# Target phase velocity
 target_vp = 6.0
 
-
+# Material properties.
 def rho(x):
     return 8.0
 
 
 def modulus(x):
-    return rho(x) * (target_vp ** 2)
+    return 288.34722222222223
 
 
 def eta(x):
-    return modulus(x) / (2.0 * target_law * target_vp)
+    return 330.42157735308393
 
 
 # Creating left dirichlet boundary condition.
@@ -46,7 +44,7 @@ right_bc = configuration.BoundaryCondition(boundary_condition_type=configuration
 config = configuration.ViscoElasticMaxwell(density=rho, modulus=modulus, eta=eta, left_bc=left_bc, right_bc=right_bc)
 
 # Creating finite element space.
-fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 10.0, 300), fe_order=5, quad_order=5)
+fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 30.0, 300), fe_order=5, quad_order=5)
 
 # Creating propagator.
 propag = visco_elastic_maxwell_propagator.ViscoElasticMaxwell(config=config, fe_space=fe_space)
@@ -90,14 +88,10 @@ else:
     T = n_step * propag.timestep
     times = np.linspace(0., T, n_step)
     exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
-    exact_solution_att = signal_processing.apply_attenuation_filter(exact_solution_no_att, propag.timestep,
-                                                                    path_length=obs_coord,
-                                                                    attenuation_filter=lambda f: target_law)
 
     # Computing frequency components.
-    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, propag.timestep)
-    exact_solution_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_att, propag.timestep)
-    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, propag.timestep)
+    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, propag.timestep, n_fft=n_fft)
+    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, propag.timestep, n_fft=n_fft)
 
     # Compouting attenuation law.
     numerical_law = (np.log(np.abs(exact_solution_no_att_f)) - np.log(np.abs(obs_sol_f))) / obs_coord
@@ -105,19 +99,16 @@ else:
     # Plotting frequency analysis and attenuation law.
     plt.subplot(311)
     plt.plot(freqs, np.abs(obs_sol_f))
-    plt.plot(freqs, np.abs(exact_solution_att_f))
     plt.plot(freqs, np.abs(exact_solution_no_att_f))
     plt.xlim([0., 10.0])
 
     plt.subplot(312)
     plt.plot(freqs, numerical_law)
-    plt.plot(freqs, target_law * np.ones_like(freqs))
     plt.xlim([0., 10.0])
-    plt.ylim([0., target_law + target_law / 10.0])
+    plt.ylim([0., 0.5])
 
     plt.subplot(313)
     plt.plot(times, obs_sol)
-    plt.plot(times, exact_solution_att)
     plt.plot(times, exact_solution_no_att)
     plt.xlim([0., np.max(times)])
     plt.ylim([-1.0, 1.0])
@@ -127,14 +118,12 @@ else:
         np.savetxt('maxwell_times.txt', times)
 
         np.savetxt('maxwell_numerical_solution_f.txt', np.abs(obs_sol_f))
-        np.savetxt('maxwell_exact_solution_att_f.txt', np.abs(exact_solution_att_f))
+        np.savetxt('maxwell_numerical_solution_f_arg.txt', np.angle(obs_sol_f / exact_solution_no_att_f))
         np.savetxt('maxwell_exact_solution_no_att_f.txt', np.abs(exact_solution_no_att_f))
 
         np.savetxt('maxwell_numerical_law.txt', numerical_law)
-        np.savetxt('maxwell_target_law.txt', target_law * np.ones_like(freqs))
 
         np.savetxt('maxwell_numerical_solution.txt', obs_sol)
-        np.savetxt('maxwell_exact_solution_att.txt', exact_solution_att)
         np.savetxt('maxwell_exact_solution_no_att.txt', exact_solution_no_att)
 
         np.savetxt('maxwell_frequencies.txt', freqs)

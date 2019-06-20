@@ -10,63 +10,45 @@ import wave1D.signal_processing as signal_processing
 
 # Simulation parameters.
 show_snapshot = False
-make_output = False
+make_output = True
 n_step = 5000
-central_frequency = 2.0
+central_frequency = 4.0
 src_offset = 1.0
+n_fft = 16384
 
 # definition of target velocity.
 target_vp = 6.0
 
-# definition of target angular frequency.
-target_f = central_frequency  # (in MHz)
-target_w = 2.0 * np.pi * target_f
-
-# definition of attenuation law at target angular frequency.
-law_at_target_w = 2.5e-02
-law_slope = law_at_target_w / target_w
-
-# definition of mass density.
-density_value = 8.0
-
-# Computing zener calibration parameters.
-Q = 1.0 / (2.0 * law_slope * target_vp)
-k1 = density_value * target_vp ** 2
-k2 = 0.5 * (np.sqrt(Q ** 2 + 1.0) - 1.0) * k1
-eta_zener = Q * k1 / (2.0 * target_w)
-
-
 # definition of reoligical parameters of Zener model.
 def density(x):
-    return density_value
+    return 8.0
 
 
-def modulus1(x):
-    return k1
-
-
-def modulus2(x):
-    return k2
+def modulus(x):
+    return 278.0
 
 
 def eta(x):
-    return eta_zener
+    return 298.0
 
+
+def tau(x):
+    return 0.039788735772973836
 
 # Creating left dirichlet boundary condition.
 left_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.DIRICHLET,
                                           value=lambda t: functional.ricker(t - src_offset, central_frequency))
 
-absorbing_param = np.sqrt(density(0.) * modulus1(0.))
+absorbing_param = np.sqrt(density(0.) * modulus(0.))
 right_bc = configuration.BoundaryCondition(boundary_condition_type=configuration.BoundaryConditionType.ABSORBING,
                                            value=lambda t: 0, param=absorbing_param)
 
 # Creating configuration.
-config = configuration.ViscoElasticZener(density=density, modulus1=modulus1, modulus2=modulus2, eta=eta,
+config = configuration.ViscoElasticZener(density=density, modulus=modulus, eta=eta, tau=tau,
                                          left_bc=left_bc, right_bc=right_bc)
 
 # Creating finite element space.
-fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 10.0, 300), fe_order=5, quad_order=5)
+fe_space = fe_sp.FiniteElementSpace(mesh=mesh.make_mesh_from_npt(0.0, 30.0, 300), fe_order=5, quad_order=5)
 
 # Creating propagator.
 propag = visco_elastic_zener_propagator.ViscoElasticZener(config=config, fe_space=fe_space)
@@ -110,35 +92,27 @@ else:
     T = n_step * propag.timestep
     times = np.linspace(0., T, n_step)
     exact_solution_no_att = functional.ricker(times - (obs_coord / target_vp) - src_offset, central_frequency)
-    exact_solution_att = signal_processing.apply_attenuation_filter(exact_solution_no_att, propag.timestep,
-                                                                    path_length=obs_coord,
-                                                                    attenuation_filter=lambda f: law_slope * 2.0 * np.pi * f)
 
     # Computing frequency components.
-    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, propag.timestep)
-    exact_solution_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_att, propag.timestep)
-    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, propag.timestep)
+    obs_sol_f, freqs = signal_processing.frequency_synthesis(obs_sol, propag.timestep, n_fft=n_fft)
+    exact_solution_no_att_f, freqs = signal_processing.frequency_synthesis(exact_solution_no_att, propag.timestep, n_fft=n_fft)
 
     # Compouting attenuation law.
     numerical_law = (np.log(np.abs(exact_solution_no_att_f)) - np.log(np.abs(obs_sol_f))) / obs_coord
-    target_law = law_slope * 2.0 * np.pi * freqs
 
     # Plotting frequency analysis and attenuation law.
     plt.subplot(311)
     plt.plot(freqs, np.abs(obs_sol_f))
-    plt.plot(freqs, np.abs(exact_solution_att_f))
     plt.plot(freqs, np.abs(exact_solution_no_att_f))
     plt.xlim([0., 10.0])
 
     plt.subplot(312)
     plt.plot(freqs, numerical_law)
-    plt.plot(freqs, target_law)
-    plt.xlim([0., 5.0])
-    plt.ylim([0, 0.06])
+    plt.xlim([0., 10.0])
+    plt.ylim([0, 0.5])
 
     plt.subplot(313)
     plt.plot(times, obs_sol)
-    plt.plot(times, exact_solution_att)
     plt.plot(times, exact_solution_no_att)
     plt.xlim([0., np.max(times)])
     plt.ylim([-1.0, 1.0])
@@ -148,14 +122,12 @@ else:
         np.savetxt('zener_times.txt', times)
 
         np.savetxt('zener_numerical_solution_f.txt', np.abs(obs_sol_f))
-        np.savetxt('zener_exact_solution_att_f.txt', np.abs(exact_solution_att_f))
+        np.savetxt('zener_numerical_solution_f_arg.txt', np.angle(obs_sol_f / exact_solution_no_att_f))
         np.savetxt('zener_exact_solution_no_att_f.txt', np.abs(exact_solution_no_att_f))
 
         np.savetxt('zener_numerical_law.txt', numerical_law)
-        np.savetxt('zener_target_law.txt', target_law)
 
         np.savetxt('zener_numerical_solution.txt', obs_sol)
-        np.savetxt('zener_exact_solution_att.txt', exact_solution_att)
         np.savetxt('zener_exact_solution_no_att.txt', exact_solution_no_att)
 
         np.savetxt('zener_frequencies.txt', freqs)
