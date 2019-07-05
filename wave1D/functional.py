@@ -36,3 +36,13 @@ def hanning(x, f, n):
         if v >= 0.0 and v <= xmax:
             val[i] = 0.5 * np.sin(2.0 * np.pi * f * v) * (1.0 - np.cos(2.0 * np.pi * f * v / n))
     return val
+
+
+def heaviside(x, eps):
+    """
+    Definition of the regularized heavised function.
+    :param x: function input argument.
+    :param eps: regularization coefficient.
+    :return: the evaluation of the heaviside function
+    """
+    return 1.0 / (1.0 + np.exp(-x / eps))
