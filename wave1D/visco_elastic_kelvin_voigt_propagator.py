@@ -27,7 +27,7 @@ class ViscoElasticKelvinVoigt:
     """
     Definition of discrete propagators for visco elastic model with Kelvin Voigt constitutive law.
     """
-    def __init__(self, config, fe_space, scheme_type=SchemeType.IMPLICIT_ORDERTWO, init_cond_type=InitialConditionType.NONE):
+    def __init__(self, config, fe_space, scheme_type=SchemeType.EXPLICIT_ORDERONE, init_cond_type=InitialConditionType.NONE):
         """
         Constructor of discrete propagators.
         :param config: Elastic model configuration.

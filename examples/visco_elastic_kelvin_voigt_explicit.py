@@ -29,7 +29,7 @@ def modulus(x):
 
 
 def eta(x):
-    return 0.0; # 0.3978873577297384
+    return 0.3978873577297384
 
 
 # Creating left dirichlet boundary condition.
