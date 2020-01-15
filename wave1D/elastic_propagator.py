@@ -113,10 +113,9 @@ class Elastic:
         Forwarding discrete solver.
         """
         # Setting potential rhs.
-        if self.config.rhs is None:
-            self.ustar.fill(0.)
-        else:
-            raise NotImplementedError()
+        self.ustar.fill(0.)
+        if self.config.rhs is not None:
+            fe_op.mlt_add(self.rhs_operator, self.config.rhs(self.fe_space, self.time), self.ustar, self.timestep ** 2)
 
         # Appending previous steps contributions.
         fe_op.mlt_add(self.operator2, self.u2, self.ustar)
