@@ -3,3 +3,10 @@
 *.txt
 
 .cache/v/cache/lastfailed
+assets/doc_v1/doc_v1.pdf
+assets/doc_v1/doc_v1.log
+assets/doc_v1/doc_v1.synctex.gz
+assets/doc_v1/doc_v1.aux
+
+*.lnk
+
