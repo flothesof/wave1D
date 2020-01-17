@@ -1,5 +1,5 @@
 """
-This example proposes an implementation of the 4D var methodology in a sample elastic configuration.
+This example proposes an implementation of an Newton-descent inversion scheme on a sample elastic configuration.
 
 The sample configuration is like this:
 S==============================|
@@ -23,6 +23,14 @@ import wave1D.finite_element_operator as fe_op
 import wave1D.mesh as mesh
 import wave1D.mass_assembler as mass_assembler
 
+# Step 0: defining the problem parameters
+# =======================================
+
+# "true" value of objective parameter
+THETA_BAR = 1.
+# observation window [0, TMAX]
+TMAX = 7.
+
 
 # Step 1: generate "true" synthetic data and extract observations
 # ==============================================================
@@ -32,12 +40,10 @@ def alpha(x):
 
 
 def beta(x, theta):
-    return np.sqrt(theta)
+    return theta ** 2
 
 
-# "true" synthetic value of objective parameter
-theta_bar = 1.
-true_beta = partial(beta, theta=theta_bar)
+true_beta = partial(beta, theta=THETA_BAR)
 
 # Creating configuration.
 # We don't need to specify a right boundary condition since the natural boundary condition is zero derivative,
@@ -59,7 +65,7 @@ propag.initialize()
 
 # Computing observer values using forward model
 observer = []
-for i in range(10000):
+while propag.time < TMAX:
     propag.forward()
     # u0 is the newly computed value, u1 and u2 previous timesteps
     value = (propag.u0[-1] - propag.u2[-1]) / (2 * propag.timestep)
@@ -69,5 +75,11 @@ for i in range(10000):
 fig, ax = plt.subplots()
 ax.plot(*np.array(observer).T, label='observer values')
 ax.legend(loc='upper right')
-ax.set_xlabel('time (not steps)')
+ax.set_xlabel('time')
+ax.set_title('observable (velocity at $x=L$)')
 plt.show()
+
+# Step 2: perform Newton iterative descent
+# ========================================
+
+
