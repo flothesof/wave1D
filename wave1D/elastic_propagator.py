@@ -80,7 +80,7 @@ class Elastic:
 
         # Computing rhs operator.
         if self.config.rhs is not None:
-            self.rhs_operator = mass_assembler.assemble_mass(lambda x: 1.0, self.fe_space, self.mass_assembly_type)
+            self.rhs_operator = mass_assembler.assemble_mass(self.fe_space, lambda x: 1.0, self.mass_assembly_type)
 
         # Computing inv operator.
         self.inv_operator = fe_op.clone(1.0, mass)
