@@ -33,10 +33,10 @@ import wave1D.stiffness_assembler as stiffness_assembler
 # "true" value of objective parameter
 THETA_BAR = 2.
 # observation window [0, TMAX]
-TMAX = 5
+TMAX = 5.
 
 # current_theta descent parameters
-THETA_INIT = 1.45
+THETA_INIT = 2.2
 CONVERGENCE_EPS = 1e-8
 MAX_STEP = 10
 JREGUL = 0.0
@@ -78,7 +78,7 @@ observer = []
 while propag.time < TMAX:
     propag.forward()
     # u0 is the newly computed value, u1 and u2 previous timesteps
-    value = (propag.u0[-1] - propag.u2[-1]) / (2 * propag.timestep)
+    value = np.square((propag.u0[-1] - propag.u2[-1]) / (2 * propag.timestep))
     observer.append((propag.time, value))
     propag.swap()
 
@@ -92,7 +92,7 @@ ax.plot(*np.array(observer).T, label='observer values')
 ax.legend(loc='upper right')
 ax.set_xlabel('time')
 ax.set_title('observable (velocity at $x=L$)')
-plt.show()
+# plt.show()
 
 # Step 2: perform Newton iterative descent
 # ========================================
@@ -145,7 +145,6 @@ while not convergence_reached:
     propag_dtheta.initialize()
     propag_d2theta.initialize()
 
-
     fig, (ax1, ax2, ax3) = plt.subplots(nrows=3)
     lines_theta = ax1.plot(propag_theta.u1)
     lines_dtheta = ax2.plot(propag_dtheta.u1)
@@ -168,28 +167,30 @@ while not convergence_reached:
         #     plt.pause(0.01)
         # i += 1
         dt = propag_theta.timestep
-        innov = interp_observer(propag_theta.time) - (propag_theta.u0[-1] - propag_theta.u2[-1]) / (2 * dt)
+        velocity_theta = (propag_theta.u0[-1] - propag_theta.u2[-1]) / (2 * dt)
+        innov = interp_observer(propag_theta.time) - np.square(velocity_theta)
         innov_snapshots.append((propag_theta.time, innov))
         velocity_dtheta = (propag_dtheta.u0[-1] - propag_dtheta.u2[-1]) / (2 * dt)
         velocity_d2theta = (propag_d2theta.u0[-1] - propag_d2theta.u2[-1]) / (2 * dt)
-        dthetaJ -= velocity_dtheta * innov * dt
-        d2thetaJ += (velocity_dtheta ** 2 - velocity_d2theta * innov) * dt
+        dthetaJ -= innov * 2 * velocity_theta * velocity_dtheta * dt
+        d2thetaJ += - (2 * velocity_d2theta * velocity_theta + 2 * velocity_dtheta ** 2) * innov * dt + \
+                      (velocity_dtheta * 2 * velocity_theta) ** 2 * dt
         propag_theta.swap()
         propag_dtheta.swap()
         propag_d2theta.swap()
 
-    #ax_innov.plot(*np.array(innov_snapshots).T)
-    #plt.show()
+    # ax_innov.plot(*np.array(innov_snapshots).T)
+    # plt.show()
 
-    residual = 0.1 * dthetaJ # / d2thetaJ
+    residual = dthetaJ / d2thetaJ
     current_theta = current_theta - residual
-    print(f"Finished step {step}, theta: {current_theta}, dthetaJ: {dthetaJ}, d2thetaJ: {d2thetaJ}, residual {residual:.3e}")
+    print(f"Finished step {step}, theta: {current_theta}, dthetaJ: {dthetaJ}, d2thetaJ: {d2thetaJ}")
     step += 1
     convergence_reached = abs(residual) < CONVERGENCE_EPS or step >= MAX_STEP or current_theta <= 0
 
 if step >= MAX_STEP:
-    print(f"Algorithm has exited due to max number of steps reached. Residual: {residual:.3e}")
+    print(f"Algorithm has exited due to max number of steps reached. Residual: {residual:.3f}")
 elif current_theta <= 0:
-    print(f"Algorithm has exited due to a negative theta parameter. Residual: {residual:.3e}")
+    print(f"Algorithm has exited due to a negative theta parameter. Residual: {residual:.3f}")
 else:
-    print(f"Algorithm has exited due to convergence (abs(residual) < {CONVERGENCE_EPS:.4e}. Residual: {residual:.3e}")
+    print(f"Algorithm has exited due to convergence (abs(residual) < {CONVERGENCE_EPS:.4e}. Residual: {residual:.3f}")
